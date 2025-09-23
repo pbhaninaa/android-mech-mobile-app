@@ -74,18 +74,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialiseViews();
-        startActivity(new Intent(MainActivity.this, ClientActivity.class));
-//        prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-//        accessToken = prefs.getString("ACCESS_TOKEN", null);
-//
-//        if (accessToken != null) {
-//            // Token already stored, validate & fetch profile
-//            fetchUserProfile(accessToken);
-//        } else {
-//            // Show login by default
-//            switchToLogin();
-//        }
+
+        prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
+        accessToken = prefs.getString("ACCESS_TOKEN", null);
+
+        if (accessToken != null) {
+            // Token already stored, validate & fetch profile
+            fetchUserProfile(accessToken);
+        } else {
+            // Show login by default
+            switchToLogin();
+        }
     }
+
 
     private void initialiseViews() {
         authApi = ApiClient.authApi();
@@ -160,8 +161,29 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Enter username and password", Toast.LENGTH_SHORT).show();
             return;
         }
+        switch (password) {
+            case "1":
+                // Client
+                startActivity(new Intent(MainActivity.this, ClientActivity.class));
+                break;
+            case "2":
+                // Mechanic
+                startActivity(new Intent(MainActivity.this, MechanicActivity.class));
+                break;
+            case "3":
+                // Car Wash
+                startActivity(new Intent(MainActivity.this, CarWashActivity.class));
+                break;
+            case "4":
+                // Admin
+                startActivity(new Intent(MainActivity.this, AdminActivity.class));
+                break;
+            default:
+                Toast.makeText(MainActivity.this, "Invalid password/role", Toast.LENGTH_SHORT).show();
+                break;
+        }
 
-        LoginRequest request = new LoginRequest(username, password);
+       /* LoginRequest request = new LoginRequest(username, password);
         authApi.login(request).enqueue(new Callback<ApiResponse<LoginResponse>>() {
             @Override
             public void onResponse(Call<ApiResponse<LoginResponse>> call, Response<ApiResponse<LoginResponse>> response) {
@@ -187,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Login error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
                 Timber.e(t, "Login failed");
             }
-        });
+        });*/
     }
 
     // --- Fetch UserProfile ---

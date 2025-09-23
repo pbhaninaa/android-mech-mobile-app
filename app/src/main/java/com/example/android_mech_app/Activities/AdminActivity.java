@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_mech_app.R;
+import com.example.android_mech_app.Utils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class AdminActivity extends AppCompatActivity {
 
     // Profile views
     TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile;
+    Button btnEditProfile,Logout;
 
     // User Management views
     RecyclerView usersRecyclerView;
@@ -115,6 +116,13 @@ public class AdminActivity extends AppCompatActivity {
         // User Management
         usersRecyclerView = findViewById(R.id.usersRecyclerView);
         usersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        Logout=findViewById(R.id.btnLogout);
+
+
+
+        Logout.setOnClickListener(v->{
+            Utils.logout(this);
+        });
     }
 
     private void showScreen(ConstraintLayout screenToShow) {

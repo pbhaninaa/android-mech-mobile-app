@@ -38,6 +38,7 @@ import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.MechanicRequest;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Role;
+import com.example.android_mech_app.Utils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.time.LocalDate;
@@ -45,6 +46,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+
+import okhttp3.internal.Util;
 
 public class ClientActivity extends AppCompatActivity {
 
@@ -69,7 +72,8 @@ public class ClientActivity extends AppCompatActivity {
     RadioButton radioSelf, radioOther;
     Spinner spinnerDescription;
     EditText editCustomDescription, editLocation, editDate;
-    Button btnSubmitRequest;
+    Button btnSubmitRequest,Logout;
+
 
     // Job options
     String[] jobOptions = {
@@ -178,6 +182,13 @@ public class ClientActivity extends AppCompatActivity {
         editLocation = findViewById(R.id.edit_location);
         editDate = findViewById(R.id.edit_date);
         btnSubmitRequest = findViewById(R.id.btn_submit_request);
+        Logout=findViewById(R.id.btnLogout);
+
+
+
+        Logout.setOnClickListener(v->{
+            Utils.logout(this);
+        });
     }
 
     private void showScreen(ConstraintLayout screenToShow) {

@@ -26,6 +26,7 @@ import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.MechanicRequest;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Role;
+import com.example.android_mech_app.Utils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.time.LocalDate;
@@ -45,7 +46,7 @@ public class MechanicActivity extends AppCompatActivity {
 
         // Profile views
         TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-        Button btnEditProfile;
+        Button btnEditProfile,Logout;
 
         // Earnings
         RecyclerView recyclerEarnings;
@@ -126,6 +127,14 @@ public class MechanicActivity extends AppCompatActivity {
             // Earnings
             recyclerEarnings = findViewById(R.id.recyclerEarnings);
             recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
+
+            Logout=findViewById(R.id.btnLogout);
+
+
+
+            Logout.setOnClickListener(v->{
+                Utils.logout(this);
+            });
         }
 
         private void showScreen(ConstraintLayout screenToShow) {

@@ -22,6 +22,7 @@ import com.example.android_mech_app.Adapters.ManageWashesAdapter;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.R;
+import com.example.android_mech_app.Utils;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class CarWashActivity extends AppCompatActivity {
 
     // Profile views
     TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile;
+    Button btnEditProfile,Logout;
 
     // Earnings
     RecyclerView recyclerEarnings;
@@ -128,6 +129,13 @@ public class CarWashActivity extends AppCompatActivity {
         // Earnings
         recyclerEarnings = findViewById(R.id.recyclerEarnings);
         recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
+        Logout=findViewById(R.id.btnLogout);
+
+
+
+        Logout.setOnClickListener(v->{
+            Utils.logout(this);
+        });
     }
 
     private void showScreen(ConstraintLayout screenToShow) {
