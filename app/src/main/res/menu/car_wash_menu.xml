@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--     android:icon="@drawable/ic_person" -->
+    <item
+        android:id="@+id/nav_home"
+        android:title="@string/home" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:title="@string/profile" />
+    <item
+        android:id="@+id/bookings"
+        android:title="@string/nav_bookings" />
+    <item
+        android:id="@+id/manage_washes"
+        android:title="@string/nav_manage_washes" />
+    <item
+        android:id="@+id/nav_earnings"
+        android:title="@string/earnings" />
+    <item
+        android:id="@+id/nav_settings"
+        android:title="@string/settings" />
+</menu>

@@ -1,0 +1,38 @@
+<resources>
+    <string-array name="car_types">
+        <item>Sedan</item>
+        <item>SUV</item>
+        <item>Hatchback</item>
+        <item>Bakkie</item>
+        <item>Van</item>
+        <item>Truck</item>
+        <item>Luxury</item>
+        <item>Coupe</item>
+        <item>Convertible</item>
+        <item>Crossover</item>
+        <item>Minivan</item>
+        <item>Pickup</item>
+        <item>Station Wagon</item>
+        <item>Electric</item>
+        <item>Hybrid</item>
+        <item>Sports Car</item>
+        <item>Microcar</item>
+        <item>Off-Road</item>
+        <item>Compact</item>
+    </string-array>
+
+    <string-array name="service_types">
+        <item>Full Wash</item>
+        <item>Exterior Wash</item>
+        <item>Interior Cleaning</item>
+        <item>Engine Wash</item>
+        <item>Undercarriage Wash</item>
+        <item>Valet Service</item>
+        <item>Waxing</item>
+        <item>Polish</item>
+        <item>Detailing</item>
+        <item>Leather Treatment</item>
+        <item>Glass Treatment</item>
+        <item>Headlight Restoration</item>
+    </string-array>
+</resources>

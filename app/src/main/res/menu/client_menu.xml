@@ -1,0 +1,27 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--     android:icon="@drawable/ic_person" -->
+    <item
+        android:id="@+id/nav_home"
+        android:title="@string/home" />
+    <item
+        android:id="@+id/nav_profile"
+        android:title="@string/profile" />
+    <item
+        android:id="@+id/nav_service_request"
+        android:title="@string/service_request" />
+    <item
+        android:id="@+id/nav_book_car_wash"
+        android:title="@string/book_car_wash" />
+    <item
+        android:id="@+id/nav_service_history"
+        android:title="@string/service_history" />
+    <item
+        android:id="@+id/nav_payments"
+        android:title="@string/nav_payments" />
+    <item
+        android:id="@+id/my_washes"
+        android:title="@string/my_washes" />
+    <item
+        android:id="@+id/nav_settings"
+        android:title="@string/settings" />
+</menu>

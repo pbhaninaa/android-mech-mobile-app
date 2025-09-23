@@ -1,0 +1,194 @@
+<resources>
+    <!-- App -->
+    <string name="app_name">Android_Mech_App</string>
+    <string name="welcome_message">Welcome to Car Wash &amp; Mechanic App</string>
+    <string name="app_description">Book car wash and mechanic services with ease</string>
+
+    <!-- Common Buttons -->
+    <string name="btn_submit">Submit</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_edit">Edit</string>
+    <string name="btn_update">Update</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_next">Next</string>
+    <string name="btn_previous">Previous</string>
+    <string name="btn_confirm">Confirm</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_logout">Logout</string>
+    <string name="btn_login">Login</string>
+    <string name="btn_register">Register</string>
+    <string name="btn_book_now">Book Now</string>
+    <string name="btn_view_details">View Details</string>
+    <string name="btn_search">Search</string>
+    <string name="btn_filter">Filter</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_yes">Yes</string>
+    <string name="btn_no">No</string>
+    <string name="btn_reschedule">Reschedule</string>
+    <string name="btn_accept">Accept</string>
+    <string name="btn_decline">Decline</string>
+    <string name="btn_pay_now">Pay Now</string>
+    <string name="btn_contact">Contact</string>
+
+    <!-- Authentication -->
+    <string name="hint_username">Username</string>
+    <string name="hint_password">Password</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_phone">Phone Number</string>
+    <string name="hint_confirm_password">Confirm Password</string>
+    <string name="hint_first_name">First Name</string>
+    <string name="hint_last_name">Last Name</string>
+
+    <string name="msg_login_success">Login successful</string>
+    <string name="msg_login_failed">Login failed. Please check your credentials.</string>
+    <string name="msg_register_success">Registration successful</string>
+    <string name="msg_register_failed">Registration failed</string>
+    <string name="msg_logout_success">You have been logged out</string>
+
+    <!-- Bookings -->
+    <string name="title_bookings">Bookings</string>
+    <string name="title_new_booking">New Booking</string>
+    <string name="title_booking_details">Booking Details</string>
+    <string name="label_booking_id">Booking ID</string>
+    <string name="label_client_name">Client Name</string>
+    <string name="label_client_phone">Client Phone</string>
+    <string name="label_client_email">Client Email</string>
+    <string name="label_car_plate">Car Plate</string>
+    <string name="label_car_type">Car Type</string>
+    <string name="label_car_description">Car Description</string>
+    <string name="label_location">Location</string>
+    <string name="label_date">Date</string>
+    <string name="label_time">Time</string>
+    <string name="label_status">Status</string>
+    <string name="label_service_types">Service Types</string>
+    <string name="label_service_price">Service Price</string>
+    <string name="label_created_at">Created At</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_accepted">Accepted</string>
+    <string name="status_declined">Declined</string>
+    <string name="status_in_progress">In Progress</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_cancelled">Cancelled</string>
+
+    <!-- Mechanic -->
+    <string name="title_mechanic_dashboard">Mechanic Dashboard</string>
+    <string name="label_mechanic_name">Mechanic Name</string>
+    <string name="label_mechanic_contact">Contact</string>
+    <string name="label_mechanic_expertise">Expertise</string>
+    <string name="label_mechanic_rating">Rating</string>
+    <string name="label_mechanic_availability">Availability</string>
+    <string name="msg_no_mechanics">No mechanics available</string>
+
+    <!-- Payments -->
+    <string name="title_payments">Payments</string>
+    <string name="label_payment_id">Payment ID</string>
+    <string name="label_amount">Amount</string>
+    <string name="label_payment_method">Payment Method</string>
+    <string name="label_payment_status">Payment Status</string>
+    <string name="status_paid">Paid</string>
+    <string name="status_unpaid">Unpaid</string>
+    <string name="status_refunded">Refunded</string>
+    <string name="msg_payment_success">Payment successful</string>
+    <string name="msg_payment_failed">Payment failed</string>
+
+    <!-- Notifications -->
+    <string name="title_notifications">Notifications</string>
+    <string name="msg_new_booking">You have a new booking</string>
+    <string name="msg_booking_updated">Booking updated</string>
+    <string name="msg_booking_cancelled">Booking cancelled</string>
+    <string name="msg_payment_received">Payment received</string>
+    <string name="msg_no_notifications">No notifications available</string>
+
+    <!-- Messages -->
+    <string name="msg_loading">Loading, please wait...</string>
+    <string name="msg_no_data">No data available</string>
+    <string name="msg_booking_success">Booking created successfully</string>
+    <string name="msg_booking_failed">Failed to create booking</string>
+    <string name="msg_update_success">Updated successfully</string>
+    <string name="msg_update_failed">Update failed</string>
+    <string name="msg_delete_success">Deleted successfully</string>
+    <string name="msg_delete_failed">Delete failed</string>
+    <string name="msg_connection_lost">Connection lost. Trying to reconnect...</string>
+    <string name="msg_try_again">Something went wrong. Please try again.</string>
+
+    <!-- Validation -->
+    <string name="error_required">This field is required</string>
+    <string name="error_invalid_email">Invalid email address</string>
+    <string name="error_password_mismatch">Passwords do not match</string>
+    <string name="error_network">Network error. Please try again.</string>
+    <string name="error_invalid_phone">Invalid phone number</string>
+    <string name="error_short_password">Password must be at least 6 characters</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_bookings">Bookings</string>
+    <string name="nav_payments">Payments</string>
+    <string name="nav_notifications">Notifications</string>
+    <string name="nav_support">Support</string>
+    <string name="nav_about">About</string>
+    <string name="nav_logout">Logout</string>
+    <string name="nav_manage_washes">Manage Washes</string>
+
+    <!-- Settings -->
+    <string name="title_settings">Settings</string>
+    <string name="label_language">Language</string>
+    <string name="label_theme">Theme</string>
+    <string name="label_dark_mode">Dark Mode</string>
+    <string name="label_light_mode">Light Mode</string>
+    <string name="label_account_settings">Account Settings</string>
+    <string name="label_notification_settings">Notification Settings</string>
+    <string name="label_privacy_policy">Privacy Policy</string>
+    <string name="label_terms_conditions">Terms &amp; Conditions</string>
+    <!-- Login Screen -->
+    <string name="login_email_hint">Enter your email</string>
+    <string name="login_password_hint">Enter your password</string>
+    <string name="login_button">Login</string>
+    <string name="login_create_user_link">Create an account</string>
+
+
+    <!-- Create User Screen -->
+    <string name="create_user_title">Create Account</string>
+    <string name="create_user_name_hint">Enter your name</string>
+    <string name="create_user_email_hint">Enter your email</string>
+    <string name="create_user_password_hint">Enter your password</string>
+    <string name="create_user_button">Create Account</string>
+    <string name="create_user_login_link">Already have an account?         Login</string>
+    <string name="create_profile">Create Profile</string>
+    <string name="first_name">First Name</string>
+    <string name="last_name">Last Name</string>
+    <string name="phone_number">Phone Number</string>
+    <string name="address">Address</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="enter_username">Enter Username</string>
+    <string name="navigation_drawer_open">Open drawer</string>
+    <string name="navigation_drawer_close">Close drawer</string>
+    <string name="profile">Profile</string>
+    <string name="home">Home</string>
+    <string name="earnings">Earnings</string>
+    <string name="settings">Settings</string>
+    <string name="customers">Customers</string>
+    <string name="revenue">Revenue</string>
+    <string name="user_management">User Management</string>
+    <string name="manage_users">Manage Users</string>
+    <string name="total_users">Total Users</string>
+    <string name="clients">Clients</string>
+    <string name="mechanics">Mechanics</string>
+    <string name="carwashes">Carwashes</string>
+    <string name="jobs_completed">Jobs Completed</string>
+    <string name="settings_screen">Settings Screen</string>
+    <string name="earnings_screen">Earnings Screen</string>
+    <string name="job_request">Job Request</string>
+    <string name="my_washes">My Washes</string>
+    <string name="service_request">Service Request</string>
+    <string name="book_car_wash">Book Car Wash</string>
+    <string name="service_history">Service History</string>
+    <string name="for_someone_else">For Someone Else</string>
+    <string name="for_myself">For Myself</string>
+
+
+</resources>
