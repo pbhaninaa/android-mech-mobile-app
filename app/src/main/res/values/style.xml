@@ -52,7 +52,7 @@
 
     <style name="InputField" parent="Widget.AppCompat.EditText">
         <item name="android:background">@drawable/bg_input</item>
-        <item name="android:padding">@dimen/spacing_small</item>
+        <item name="android:padding">@dimen/spacing_medium</item>
         <item name="android:textColor">@color/black</item>
         <item name="android:textColorHint">@color/gray</item>
         <item name="android:textSize">@dimen/text_medium</item>

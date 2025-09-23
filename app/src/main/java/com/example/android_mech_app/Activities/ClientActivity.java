@@ -209,7 +209,19 @@ public class ClientActivity extends AppCompatActivity {
     // ------------------- Car Wash Management -------------------
     private void loadManageWashes() {
         List<CarWashBooking> bookings = new ArrayList<>();
-        // Add sample bookings here ...
+
+        // Add sample booking
+        bookings.add(new CarWashBooking(
+                "TBhani",
+                "AUTO-ID-001",
+                "SUV",
+                "Sandton, Johannesburg",
+                List.of("Exterior Wash"),
+                150.0,
+                "2025-09-25",
+                "pending"
+        ));
+
         RecyclerView manageWashes = findViewById(R.id.recyclerManageWashes);
         manageWashes.setLayoutManager(new LinearLayoutManager(this));
         ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
@@ -218,7 +230,19 @@ public class ClientActivity extends AppCompatActivity {
 
     private void loadManageBookings() {
         List<CarWashBooking> bookings = new ArrayList<>();
-        // Add sample bookings here ...
+
+        // Add sample booking
+        bookings.add(new CarWashBooking(
+                "JSmith",
+                "AUTO-ID-002",
+                "Sedan",
+                "Rosebank, Johannesburg",
+                List.of("Full Wash", "Interior Cleaning"),
+                250.0,
+                "2025-09-26",
+                "pending"
+        ));
+
         RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
         manageBookings.setLayoutManager(new LinearLayoutManager(this));
         ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
@@ -227,10 +251,24 @@ public class ClientActivity extends AppCompatActivity {
 
     private void setupPayments() {
         List<Earning> demoEarnings = new ArrayList<>();
-        // Add sample earnings here ...
+
+        // Add sample earning
+        demoEarnings.add(new Earning(
+                1,              // id
+                150.0,          // amount
+                "TBhani",       // clientUsername
+                1,              // jobId
+                null,           // mechanicId
+                5,              // carWashId
+                15.0,           // platformFee
+                "2025-09-25T10:00:00", // paidAt
+                "Exterior Wash" // jobDescription
+        ));
+
         EarningsAdapter adapter = new EarningsAdapter(demoEarnings);
         recyclerEarnings.setAdapter(adapter);
     }
+
 
     // ------------------- Job Requests -------------------
     private void loadJobRequests() {
