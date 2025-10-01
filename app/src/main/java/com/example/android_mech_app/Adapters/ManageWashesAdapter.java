@@ -1,5 +1,6 @@
 package com.example.android_mech_app.Adapters;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,6 +31,7 @@ public class ManageWashesAdapter extends RecyclerView.Adapter<ManageWashesAdapte
         return new WashViewHolder(view);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull WashViewHolder holder, int position) {
         CarWashBooking booking = bookings.get(position);
