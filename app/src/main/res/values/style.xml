@@ -13,13 +13,13 @@
     </style>
 
     <!-- Buttons -->
-<!--    <style name="PrimaryButton" parent="Widget.AppCompat.Button">-->
-<!--        <item name="android:background">@drawable/bg_button_primary</item>-->
-<!--        <item name="android:textColor">@color/white</item>-->
-<!--        <item name="android:textAllCaps">true</item>-->
-<!--        <item name="android:padding">@dimen/spacing_small</item>-->
-<!--    </style>-->
 
+    <style name="PrimaryButton" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_button_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:padding">@dimen/spacing_small</item>
+    </style>
     <style name="SecondaryButton" parent="Widget.AppCompat.Button">
         <item name="android:background">@drawable/bg_button_secondary</item>
         <item name="android:textColor">@color/white</item>
@@ -43,12 +43,7 @@
     <style name="BodyText" parent="TextAppearance.AppCompat.Small">
         <item name="android:textColor">@color/black</item>
     </style>
-    <style name="PrimaryButton" parent="Widget.AppCompat.Button">
-        <item name="android:background">@drawable/bg_button_primary</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textAllCaps">true</item>
-        <item name="android:padding">@dimen/spacing_small</item>
-    </style>
+
 
     <style name="InputField" parent="Widget.AppCompat.EditText">
         <item name="android:background">@drawable/bg_input</item>

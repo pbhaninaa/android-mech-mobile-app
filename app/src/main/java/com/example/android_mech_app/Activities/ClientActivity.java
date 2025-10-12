@@ -34,131 +34,87 @@ import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.JobRequestsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
 import com.example.android_mech_app.Models.CarWashBooking;
-import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.MechanicRequest;
+import com.example.android_mech_app.Models.Payment;
+import com.example.android_mech_app.Models.UserProfile;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Role;
 import com.example.android_mech_app.Utils;
+import com.example.android_mech_app.api.ApiClient;
+import com.example.android_mech_app.api.ApiHandler;
+import com.example.android_mech_app.api.ApiService;
 import com.google.android.material.navigation.NavigationView;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
-import okhttp3.internal.Util;
-
 public class ClientActivity extends AppCompatActivity {
 
-    // Dashboard views
-    DrawerLayout drawerLayout;
-    ConstraintLayout HomeScreen, ProfileScreen, CarWashBookingsScreen, CarWashHistoryScreen,
-            ServiceHistoryScreen, PaymentsScreen, SettingsScreen, ServiceRequestScreen;
-    NavigationView navigationView;
-    Toolbar toolbar;
-    TextView loggedUserName;
+    // ----------------- Views -----------------
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private Toolbar toolbar;
+    private TextView loggedUserName;
 
-    // Profile views
-    TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile;
+    // Screens
+    private ConstraintLayout HomeScreen, ProfileScreen, CarWashBookingsScreen,
+            CarWashHistoryScreen, ServiceHistoryScreen, PaymentsScreen,
+            SettingsScreen, ServiceRequestScreen;
 
-    // Earnings
-    RecyclerView recyclerEarnings;
-    EarningsAdapter earningsAdapter;
+    // Profile
+    private TextView txtFullName, txtUsername, txtEmail, txtPhone,
+            txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
+    private Button btnEditProfile;
 
-    // Request Mechanic Views
-    RadioGroup radioForSelf;
-    RadioButton radioSelf, radioOther;
-    Spinner spinnerDescription;
-    EditText editCustomDescription, editLocation, editDate;
-    Button btnSubmitRequest,Logout;
+    // Payments
+    private RecyclerView recyclerEarnings;
 
+    // Mechanic Requests
+    private RadioGroup radioForSelf;
+    private RadioButton radioSelf, radioOther;
+    private Spinner spinnerDescription;
+    private EditText editCustomDescription, editLocation, editDate;
+    private Button btnSubmitRequest, btnLogout;
 
-    // Job options
-    String[] jobOptions = {
-            "Fix car engine",
-            "Replace brake pads",
-            "Change oil",
-            "Battery replacement",
-            "Tire replacement",
-            "AC repair",
-            "Suspension repair",
-            "Other"
+    private ApiHandler apiHandler;
+
+    private String[] jobOptions = {
+            "Fix car engine", "Replace brake pads", "Change oil", "Battery replacement",
+            "Tire replacement", "AC repair", "Suspension repair", "Other"
     };
 
+    // ----------------- Lifecycle -----------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
 
-        // Initialize views
         initialiseViews();
+        setupToolbarDrawer();
+        setupNavigation();
 
-        // Toolbar and Drawer
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Car Management App");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close);
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
-        // Navigation click handling
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_home) showScreen(HomeScreen);
-            else if (id == R.id.nav_profile) showScreen(ProfileScreen);
-            else if (id == R.id.nav_service_request) showScreen(ServiceRequestScreen);
-            else if (id == R.id.nav_book_car_wash) {
-                showScreen(CarWashBookingsScreen);
-                handleBooking("TBhani", "SUV", "Exterior Wash", 150.0, "2025-09-25", "Sandton, Johannesburg");
-            }
-            else if (id == R.id.nav_service_history) {
-                showScreen(ServiceHistoryScreen);
-                loadJobRequests();
-            }
-            else if (id == R.id.nav_payments) {
-                showScreen(PaymentsScreen);
-                setupPayments();
-            }
-            else if (id == R.id.my_washes) {
-                showScreen(CarWashHistoryScreen);
-                loadManageBookings();
-            }
-            else if (id == R.id.nav_settings) showScreen(SettingsScreen);
-
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return true;
-        });
-
-        // Show Home screen by default
-        showScreen(HomeScreen);
-
-        // Setup Request Mechanic functionality
+        loadUserProfile(); // load profile
+        showScreen(HomeScreen); // default screen
         setupRequestMechanic();
     }
 
+    // ----------------- Initialize Views -----------------
     private void initialiseViews() {
-        // Dashboard
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
         loggedUserName = findViewById(R.id.loggedUsername);
 
-        // Screens
         HomeScreen = findViewById(R.id.dashboard);
         ProfileScreen = findViewById(R.id.profile);
         CarWashBookingsScreen = findViewById(R.id.carWashBookings);
+        CarWashHistoryScreen = findViewById(R.id.bookings);
         ServiceHistoryScreen = findViewById(R.id.service_history);
         PaymentsScreen = findViewById(R.id.earnings);
         SettingsScreen = findViewById(R.id.settings);
-        CarWashHistoryScreen = findViewById(R.id.bookings);
         ServiceRequestScreen = findViewById(R.id.request_service);
 
-        // Profile
         txtFullName = findViewById(R.id.txtFullName);
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
@@ -169,11 +125,9 @@ public class ClientActivity extends AppCompatActivity {
         txtUpdatedAt = findViewById(R.id.txtUpdatedAt);
         btnEditProfile = findViewById(R.id.btnEditProfile);
 
-        // Earnings
         recyclerEarnings = findViewById(R.id.recyclerEarnings);
         recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
 
-        // Request Mechanic
         radioForSelf = findViewById(R.id.radio_for_self);
         radioSelf = findViewById(R.id.radio_self);
         radioOther = findViewById(R.id.radio_other);
@@ -182,175 +136,156 @@ public class ClientActivity extends AppCompatActivity {
         editLocation = findViewById(R.id.edit_location);
         editDate = findViewById(R.id.edit_date);
         btnSubmitRequest = findViewById(R.id.btn_submit_request);
-        Logout=findViewById(R.id.btnLogout);
+        btnLogout = findViewById(R.id.btnLogout);
 
+        btnLogout.setOnClickListener(v -> Utils.logout(this));
 
-
-        Logout.setOnClickListener(v->{
-            Utils.logout(this);
-        });
+        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
+        apiHandler = new ApiHandler(apiService);
     }
 
-    private void showScreen(ConstraintLayout screenToShow) {
-        // Hide all screens
+    // ----------------- Toolbar & Drawer -----------------
+    private void setupToolbarDrawer() {
+        setSupportActionBar(toolbar);
+        toolbar.setTitle("Client Dashboard");
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close);
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+    }
+
+    // ----------------- Navigation -----------------
+    // ----------------- Navigation -----------------
+    private void setupNavigation() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                showScreen(HomeScreen);
+            } else if (id == R.id.nav_profile) {
+                showScreen(ProfileScreen);
+            } else if (id == R.id.nav_service_request) {
+                showScreen(ServiceRequestScreen);
+            } else if (id == R.id.nav_book_car_wash) {
+                showScreen(CarWashBookingsScreen);
+            } else if (id == R.id.nav_service_history) {
+                showScreen(ServiceHistoryScreen);
+                loadJobRequests();
+            } else if (id == R.id.nav_payments) {
+                showScreen(PaymentsScreen);
+                setupPayments();
+            } else if (id == R.id.my_washes) {
+                showScreen(CarWashHistoryScreen);
+                loadManageBookings();
+            } else if (id == R.id.nav_settings) {
+                showScreen(SettingsScreen);
+            } else {
+                showScreen(HomeScreen);
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
+
+        // Highlight default item
+        navigationView.setCheckedItem(R.id.nav_home);
+    }
+
+
+    // ----------------- Screen Switch -----------------
+    private void showScreen(ConstraintLayout screen) {
         HomeScreen.setVisibility(View.GONE);
         ProfileScreen.setVisibility(View.GONE);
         CarWashBookingsScreen.setVisibility(View.GONE);
-        ServiceHistoryScreen.setVisibility(View.GONE);
         CarWashHistoryScreen.setVisibility(View.GONE);
+        ServiceHistoryScreen.setVisibility(View.GONE);
         PaymentsScreen.setVisibility(View.GONE);
         SettingsScreen.setVisibility(View.GONE);
         ServiceRequestScreen.setVisibility(View.GONE);
 
-        // Show selected screen
-        screenToShow.setVisibility(View.VISIBLE);
+        screen.setVisibility(View.VISIBLE);
     }
 
-    // ------------------- Car Wash Management -------------------
-    private void loadManageWashes() {
-        List<CarWashBooking> bookings = new ArrayList<>();
-
-        // Add sample booking
-        bookings.add(new CarWashBooking(
-                "TBhani",
-                "AUTO-ID-001",
-                "SUV",
-                "Sandton, Johannesburg",
-                List.of("Exterior Wash"),
-                150.0,
-                "2025-09-25",
-                "pending"
-        ));
-
-        RecyclerView manageWashes = findViewById(R.id.recyclerManageWashes);
-        manageWashes.setLayoutManager(new LinearLayoutManager(this));
-        ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
-        manageWashes.setAdapter(adapter);
-    }
-
-    private void loadManageBookings() {
-        List<CarWashBooking> bookings = new ArrayList<>();
-
-        // Add sample booking
-        bookings.add(new CarWashBooking(
-                "JSmith",
-                "AUTO-ID-002",
-                "Sedan",
-                "Rosebank, Johannesburg",
-                List.of("Full Wash", "Interior Cleaning"),
-                250.0,
-                "2025-09-26",
-                "pending"
-        ));
-
-        RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
-        manageBookings.setLayoutManager(new LinearLayoutManager(this));
-        ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
-        manageBookings.setAdapter(adapter);
-    }
-
-    private void setupPayments() {
-        List<Earning> demoEarnings = new ArrayList<>();
-
-        // Add sample earning
-        demoEarnings.add(new Earning(
-                1,              // id
-                150.0,          // amount
-                "TBhani",       // clientUsername
-                1,              // jobId
-                null,           // mechanicId
-                5,              // carWashId
-                15.0,           // platformFee
-                "2025-09-25T10:00:00", // paidAt
-                "Exterior Wash" // jobDescription
-        ));
-
-        EarningsAdapter adapter = new EarningsAdapter(demoEarnings);
-        recyclerEarnings.setAdapter(adapter);
-    }
-
-
-    // ------------------- Job Requests -------------------
-    private void loadJobRequests() {
-        List<MechanicRequest> requests = new ArrayList<>();
-        requests.add(new MechanicRequest() {{
-            setId(1L);
-            setUsername("TBhani");
-            setDescription("Replace brake pads");
-            setLocation("Buccleuch, Johannesburg Ward 32, Sandton, Gauteng, 2054, South Africa");
-            setLatitude(-26.0679378);
-            setLongitude(28.1027465);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) setDate(LocalDate.of(2025, 9, 18));
-            setStatus("pending");
-        }});
-        // Add more sample requests as needed ...
-
-        Role role = Role.CLIENT;
-        RecyclerView jobRequestsRecycler = findViewById(R.id.recyclerServiceHistory);
-        jobRequestsRecycler.setLayoutManager(new LinearLayoutManager(this));
-        JobRequestsAdapter adapter = new JobRequestsAdapter(requests, role);
-        jobRequestsRecycler.setAdapter(adapter);
-    }
-
-    // ------------------- Car Wash Booking Helper -------------------
-    private boolean handleBooking(String clientName, String carModel, String serviceType,
-                                  double price, String bookingDate, String location) {
-        // Validation
-        if (clientName == null || clientName.trim().isEmpty()) {
-            Toast.makeText(this, "Client name is required", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (carModel == null || carModel.trim().isEmpty()) {
-            Toast.makeText(this, "Car model is required", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (serviceType == null || serviceType.trim().isEmpty()) {
-            Toast.makeText(this, "Service type is required", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (price <= 0) {
-            Toast.makeText(this, "Price must be greater than 0", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (bookingDate == null || bookingDate.trim().isEmpty()) {
-            Toast.makeText(this, "Booking date is required", Toast.LENGTH_SHORT).show();
-            return false;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                LocalDate selectedDate = LocalDate.parse(bookingDate);
-                if (selectedDate.isBefore(LocalDate.now())) {
-                    Toast.makeText(this, "Booking date cannot be in the past", Toast.LENGTH_SHORT).show();
-                    return false;
-                }
-            } catch (Exception e) {
-                Toast.makeText(this, "Invalid booking date format (yyyy-MM-dd)", Toast.LENGTH_SHORT).show();
-                return false;
+    // ----------------- Load Profile -----------------
+    private void loadUserProfile() {
+        String token = Utils.getAuthToken(this);
+        apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                String fullName = String.format("%s %s",
+                        profile.getLastName() != null ? profile.getLastName() : "",
+                        profile.getFirstName() != null ? profile.getFirstName() : "");
+                txtFullName.setText(fullName);
+                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
+                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
+                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
+                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "");
+                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
+                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
             }
-        }
-        if (location == null || location.trim().isEmpty()) {
-            Toast.makeText(this, "Location is required", Toast.LENGTH_SHORT).show();
-            return false;
-        }
 
-        CarWashBooking booking = new CarWashBooking(
-                clientName,
-                "AUTO-ID-" + System.currentTimeMillis(),
-                carModel,
-                location,
-                List.of(serviceType),
-                price,
-                bookingDate,
-                "pending"
-        );
-
-        Toast.makeText(this, "Booking created for " + carModel + " on " + bookingDate, Toast.LENGTH_LONG).show();
-        return true;
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(ClientActivity.this, "Failed to load profile: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // ------------------- Request Mechanic Functionality -------------------
+    // ----------------- Payments -----------------
+    private void setupPayments() {
+        apiHandler.getPaymentsByClient(Utils.getLoggedInUsername(this), new ApiHandler.ApiCallback<List<Payment>>() {
+            @Override
+            public void onSuccess(List<Payment> payments) {
+                recyclerEarnings.setAdapter(new EarningsAdapter(payments));
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(ClientActivity.this, "Failed to load payments: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ----------------- Job Requests -----------------
+    private void loadJobRequests() {
+        apiHandler.getMechanicRequestsByUsername(Utils.getLoggedInUsername(this), new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+            @Override
+            public void onSuccess(List<MechanicRequest> requests) {
+                RecyclerView jobRequestsRecycler = findViewById(R.id.recyclerServiceHistory);
+                jobRequestsRecycler.setLayoutManager(new LinearLayoutManager(ClientActivity.this));
+                jobRequestsRecycler.setAdapter(new JobRequestsAdapter(requests, Role.CLIENT));
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(ClientActivity.this, "Failed to load job history: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ----------------- Car Wash Bookings -----------------
+    private void loadManageBookings() {
+        Long userId = Utils.getLoggedInUserId(this);
+        apiHandler.getCarWashBookingById(userId, new ApiHandler.ApiCallback<CarWashBooking>() {
+            @Override
+            public void onSuccess(CarWashBooking booking) {
+                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
+                manageBookings.setLayoutManager(new LinearLayoutManager(ClientActivity.this));
+                manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking)));
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(ClientActivity.this, "Failed to load car wash bookings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ----------------- Mechanic Requests -----------------
     private void setupRequestMechanic() {
-        // Spinner setup
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, jobOptions);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDescription.setAdapter(adapter);
@@ -358,12 +293,9 @@ public class ClientActivity extends AppCompatActivity {
         spinnerDescription.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                if (jobOptions[position].equals("Other")) editCustomDescription.setVisibility(View.VISIBLE);
-                else editCustomDescription.setVisibility(View.GONE);
+                editCustomDescription.setVisibility(jobOptions[position].equals("Other") ? View.VISIBLE : View.GONE);
             }
-
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
 
         radioForSelf.setOnCheckedChangeListener((group, checkedId) -> {
@@ -377,7 +309,6 @@ public class ClientActivity extends AppCompatActivity {
         });
 
         editDate.setOnClickListener(v -> showDatePicker());
-
         btnSubmitRequest.setOnClickListener(v -> submitMechanicRequest());
     }
 
@@ -387,8 +318,7 @@ public class ClientActivity extends AppCompatActivity {
                 (view, year, month, dayOfMonth) -> editDate.setText(year + "-" + (month + 1) + "-" + dayOfMonth),
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        );
+                calendar.get(Calendar.DAY_OF_MONTH));
         dialog.getDatePicker().setMinDate(System.currentTimeMillis());
         dialog.show();
     }
@@ -409,9 +339,9 @@ public class ClientActivity extends AppCompatActivity {
 
     private void submitMechanicRequest() {
         String description = spinnerDescription.getSelectedItem().toString();
-        if (description.equals("Other")) description = editCustomDescription.getText().toString();
-        String location = editLocation.getText().toString();
-        String date = editDate.getText().toString();
+        if (description.equals("Other")) description = editCustomDescription.getText().toString().trim();
+        String location = editLocation.getText().toString().trim();
+        String date = editDate.getText().toString().trim();
 
         if (description.isEmpty() || location.isEmpty() || date.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
@@ -419,23 +349,27 @@ public class ClientActivity extends AppCompatActivity {
         }
 
         MechanicRequest request = new MechanicRequest();
-        request.setUsername("CurrentUser"); // replace with actual username
+        request.setUsername(Utils.getLoggedInUsername(this));
         request.setDescription(description);
         request.setLocation(location);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            request.setDate(LocalDate.parse(date));
-        request.setStatus("pending");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) request.setDate(LocalDate.parse(date));
 
-        Toast.makeText(this, "Mechanic request submitted successfully!", Toast.LENGTH_LONG).show();
+        apiHandler.createMechanicRequest(request, new ApiHandler.ApiCallback<MechanicRequest>() {
+            @Override
+            public void onSuccess(MechanicRequest result) {
+                Toast.makeText(ClientActivity.this, "Mechanic request submitted successfully!", Toast.LENGTH_LONG).show();
+                spinnerDescription.setSelection(0);
+                editCustomDescription.setText("");
+                editCustomDescription.setVisibility(View.GONE);
+                editLocation.setText("");
+                editDate.setText("");
+                loadJobRequests();
+            }
 
-        // Reset form
-        spinnerDescription.setSelection(0);
-        editCustomDescription.setText("");
-        editCustomDescription.setVisibility(View.GONE);
-        editLocation.setText("");
-        editDate.setText("");
-
-        // Reload history
-        loadJobRequests();
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(ClientActivity.this, "Failed to submit request: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

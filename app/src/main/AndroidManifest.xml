@@ -3,8 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.android_mech_app">
 
+    <!-- Location permission -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
         tools:ignore="CoarseFineLocation" />
+
+    <!-- Internet permission (required for network requests) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Optional: check network state (good practice if you need it) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -14,6 +22,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android_Mech_App"
         android:usesCleartextTraffic="true">
+
+        <!-- Your app activities -->
         <activity
             android:name=".Activities.AdminActivity"
             android:exported="false" />
@@ -31,10 +41,10 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

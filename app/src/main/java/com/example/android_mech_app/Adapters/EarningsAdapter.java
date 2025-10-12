@@ -9,15 +9,16 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_mech_app.Models.Earning;
+import com.example.android_mech_app.Models.Payment;
 import com.example.android_mech_app.R;
 
 import java.util.List;
 
 public class EarningsAdapter extends RecyclerView.Adapter<EarningsAdapter.EarningViewHolder> {
 
-    private List<Earning> earnings;
+    private List<Payment> earnings;
 
-    public EarningsAdapter(List<Earning> earnings) {
+    public EarningsAdapter(List<Payment> earnings) {
         this.earnings = earnings;
     }
 
@@ -30,7 +31,7 @@ public class EarningsAdapter extends RecyclerView.Adapter<EarningsAdapter.Earnin
 
     @Override
     public void onBindViewHolder(@NonNull EarningViewHolder holder, int position) {
-        Earning earning = earnings.get(position);
+        Payment earning = earnings.get(position);
         holder.txtClientUsername.setText("Client: " + earning.getClientUsername());
         holder.txtJobDescription.setText("Job: " + earning.getJobDescription());
         holder.txtServicePrice.setText("Amount: $" + earning.getAmount());

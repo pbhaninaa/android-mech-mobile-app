@@ -8,11 +8,12 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -21,53 +22,32 @@ import com.example.android_mech_app.Activities.AdminActivity;
 import com.example.android_mech_app.Activities.CarWashActivity;
 import com.example.android_mech_app.Activities.ClientActivity;
 import com.example.android_mech_app.Activities.MechanicActivity;
-import com.example.android_mech_app.Api.ApiClient;
-import com.example.android_mech_app.Activities.UserProfileAPI;
-import com.example.android_mech_app.Endpints.AuthApi;
-import com.example.android_mech_app.Models.CallStructures.ApiResponse;
 import com.example.android_mech_app.Models.CallStructures.LoginRequest;
 import com.example.android_mech_app.Models.CallStructures.LoginResponse;
 import com.example.android_mech_app.Models.UserProfile;
-
-import java.util.HashSet;
-import java.util.Set;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import timber.log.Timber;
-
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.drawerlayout.widget.DrawerLayout;
+import com.example.android_mech_app.api.ApiClient;
+import com.example.android_mech_app.api.ApiHandler;
+import com.example.android_mech_app.api.ApiService;
+import com.google.gson.Gson;
 
 public class MainActivity extends AppCompatActivity {
 
-    // --- Layouts ---
-    private ConstraintLayout layoutLogin, layoutCreateUser, layoutCreateUserProfile;
+    // Layouts
+    private ScrollView layoutLogin, layoutCreateUser, layoutCreateUserProfile;
 
-    // --- Login Views ---
+    // Login views
     private EditText etLoginEmail, etLoginPassword;
     private Button btnLogin;
     private TextView tvCreateUserLink;
 
-    // --- Create User Views ---
-    private EditText etUserName, etCreatePassword, etCreatePasswordConfirmation;
-    private Button btnCreateUser;
-    private TextView tvLoginLink;
-
-    // --- Create UserProfile Views ---
-    private EditText etProfileFirstName, etProfileLastName, etProfilePhone, etProfileAddress;
-    private Button btnCreateProfile;
-
-    // --- APIs ---
-    private AuthApi authApi;
-    private UserProfileAPI userProfileApi;
-
-    // --- Token ---
-    private String accessToken;
+    // API
+    private ApiHandler apiHandler;
     private SharedPreferences prefs;
+    private String accessToken;
 
-    DrawerLayout drawerLayout;
+    private static final String PREFS_NAME = "MyAppPrefs";
+    private static final String KEY_ACCESS_TOKEN = "ACCESS_TOKEN";
+    private static final String KEY_USER_PROFILE = "LOGGED_USER_PROFILE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,65 +55,53 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initialiseViews();
 
-        prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-        accessToken = prefs.getString("ACCESS_TOKEN", null);
+        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        accessToken = prefs.getString(KEY_ACCESS_TOKEN, null);
 
-        if (accessToken != null) {
-            // Token already stored, validate & fetch profile
-            fetchUserProfile(accessToken);
+        // Check if profile is already saved
+        UserProfile savedProfile = getSavedUserProfile();
+
+        if (savedProfile != null) {
+            // Assuming navigateToRole accepts a Set<Role>
+//            navigateToRole(savedProfile.getRoles());
+
+            // OR, if you want to navigate based on the first role name:
+             if (!savedProfile.getRole().isEmpty()) {
+                 String roleName = savedProfile.getRole();
+                 navigateToRole(roleName);
+             }
+        } else if (accessToken != null) {
+            fetchUserProfile();
         } else {
-            // Show login by default
             switchToLogin();
         }
+
     }
 
-
     private void initialiseViews() {
-        authApi = ApiClient.authApi();
-        userProfileApi = ApiClient.userProfileApi();
+        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
+        apiHandler = new ApiHandler(apiService);
 
-        // --- Layouts ---
         layoutLogin = findViewById(R.id.layout_login);
         layoutCreateUser = findViewById(R.id.layout_create_user);
         layoutCreateUserProfile = findViewById(R.id.layout_create_user_profile);
 
-        // --- Login Views ---
         etLoginEmail = findViewById(R.id.et_login_email);
         etLoginPassword = findViewById(R.id.et_login_password);
         btnLogin = findViewById(R.id.btn_login);
         tvCreateUserLink = findViewById(R.id.tv_create_user_link);
 
-        // --- Create User Views ---
-        etCreatePasswordConfirmation = findViewById(R.id.et_pass_confirm);
-        etUserName = findViewById(R.id.et_create_user_email);
-        etCreatePassword = findViewById(R.id.et_create_user_password);
-        btnCreateUser = findViewById(R.id.btn_create_user);
-        tvLoginLink = findViewById(R.id.tv_login_link);
-
-        // --- Create UserProfile Views ---
-        etProfileFirstName = findViewById(R.id.et_profile_first_name);
-        etProfileLastName = findViewById(R.id.et_profile_last_name);
-        etProfilePhone = findViewById(R.id.et_profile_phone);
-        etProfileAddress = findViewById(R.id.et_profile_address);
-        btnCreateProfile = findViewById(R.id.btn_create_profile);
-
-
-        // --- Listeners ---
         btnLogin.setOnClickListener(v -> handleLogin());
         tvCreateUserLink.setOnClickListener(v -> switchToCreateUser());
-        tvLoginLink.setOnClickListener(v -> switchToLogin());
-        btnCreateUser.setOnClickListener(v -> handleCreateUser());
-        btnCreateProfile.setOnClickListener(v -> handleCreateUserProfile());
 
-        // --- Window Insets ---
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+        ConstraintLayout mainLayout = findViewById(R.id.main_layout);
+        ViewCompat.setOnApplyWindowInsetsListener(mainLayout, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
     }
 
-    // --- Layout Switchers ---
     private void switchToCreateUser() {
         layoutLogin.setVisibility(View.GONE);
         layoutCreateUser.setVisibility(View.VISIBLE);
@@ -152,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
         layoutCreateUserProfile.setVisibility(View.VISIBLE);
     }
 
-    // --- Login ---
+    // -------------------- LOGIN --------------------
     private void handleLogin() {
         String username = etLoginEmail.getText().toString().trim();
         String password = etLoginPassword.getText().toString().trim();
@@ -161,178 +129,90 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Enter username and password", Toast.LENGTH_SHORT).show();
             return;
         }
-        switch (password) {
-            case "1":
-                // Client
-                startActivity(new Intent(MainActivity.this, ClientActivity.class));
-                break;
-            case "2":
-                // Mechanic
-                startActivity(new Intent(MainActivity.this, MechanicActivity.class));
-                break;
-            case "3":
-                // Car Wash
-                startActivity(new Intent(MainActivity.this, CarWashActivity.class));
-                break;
-            case "4":
-                // Admin
-                startActivity(new Intent(MainActivity.this, AdminActivity.class));
-                break;
-            default:
-                Toast.makeText(MainActivity.this, "Invalid password/role", Toast.LENGTH_SHORT).show();
-                break;
-        }
 
-       /* LoginRequest request = new LoginRequest(username, password);
-        authApi.login(request).enqueue(new Callback<ApiResponse<LoginResponse>>() {
+        LoginRequest request = new LoginRequest();
+        request.setUsername(username);
+        request.setPassword(password);
+
+        navigateToRole(username.toUpperCase());
+
+        /*apiHandler.login(request, new ApiHandler.ApiCallback<LoginResponse>() {
             @Override
-            public void onResponse(Call<ApiResponse<LoginResponse>> call, Response<ApiResponse<LoginResponse>> response) {
-                if (response.isSuccessful() && response.body() != null && response.body().getData() != null) {
-                    accessToken = response.body().getData().getAccessToken();
-                    // Save token
-                    prefs.edit().putString("ACCESS_TOKEN", accessToken).apply();
-                    prefs.edit().putString("USERNAME", username).apply();
+            public void onSuccess(LoginResponse result) {
+                accessToken = result.getAccessToken();
+                prefs.edit().putString(KEY_ACCESS_TOKEN, accessToken).apply();
 
-
-                    Toast.makeText(MainActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
-                    Timber.d("AccessToken: %s", accessToken);
-
-                    fetchUserProfile(accessToken);
-
+                if (result.isHasProfile()) {
+                    fetchUserProfile(); // Fetch profile using token
                 } else {
-                    Toast.makeText(MainActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
+                    switchToCreateUserProfile(); // Show create profile screen
                 }
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<LoginResponse>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Login error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                Timber.e(t, "Login failed");
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MainActivity.this, "Login failed: " + errorMessage, Toast.LENGTH_SHORT).show();
             }
         });*/
     }
 
-    // --- Fetch UserProfile ---
-    private void fetchUserProfile(String token) {
-        String authHeader = "Bearer " + token;
-        userProfileApi.getProfile(authHeader).enqueue(new Callback<ApiResponse<UserProfile>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<UserProfile>> call, Response<ApiResponse<UserProfile>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    UserProfile profile = response.body().getData();
-                    if (profile != null && profile.getRoles() != null && !profile.getRoles().isEmpty()) {
-                        Role role = profile.getRoles().iterator().next();
 
-                        switch (role) {
-                            case CLIENT:
-                                startActivity(new Intent(MainActivity.this, ClientActivity.class));
-                                break;
-                            case MECHANIC:
-                                startActivity(new Intent(MainActivity.this, MechanicActivity.class));
-                                break;
-                            case ADMIN:
-                                startActivity(new Intent(MainActivity.this, AdminActivity.class));
-                                break;
-                            case CARWASH:
-                                startActivity(new Intent(MainActivity.this, CarWashActivity.class));
-                                break;
-                        }
-                        finish();
-                    } else {
-                        Toast.makeText(MainActivity.this, "Profile not found. Please create one.", Toast.LENGTH_SHORT).show();
-                        switchToCreateUserProfile();
-                    }
+    // -------------------- FETCH USER PROFILE --------------------
+    private void fetchUserProfile() {
+        apiHandler.getProfile(accessToken, new ApiHandler.ApiCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                saveUserProfileLocally(profile);
+
+                if (profile.getRole() != null && !profile.getRole().isEmpty()) {
+                    navigateToRole(profile.getRole());
                 } else {
-                    Toast.makeText(MainActivity.this, "Failed to fetch profile", Toast.LENGTH_SHORT).show();
-                    switchToLogin();
+                    Toast.makeText(MainActivity.this, "No profile found. Please create one.", Toast.LENGTH_SHORT).show();
+                    switchToCreateUserProfile();
                 }
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<UserProfile>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Error fetching profile: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                Timber.e(t, "Fetch profile failed");
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MainActivity.this, "Error fetching profile: " + errorMessage, Toast.LENGTH_SHORT).show();
                 switchToLogin();
             }
         });
     }
 
-    // --- Create User ---
-    private void handleCreateUser() {
-        String username = etUserName.getText().toString().trim();
-        String pass = etCreatePasswordConfirmation.getText().toString().trim();
-        String password = etCreatePassword.getText().toString().trim();
-
-        if (TextUtils.isEmpty(username) || TextUtils.isEmpty(pass) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (!pass.equals(password)) {
-            Toast.makeText(this, "Password Mismatch!!!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        authApi.createUser(new com.example.android_mech_app.Models.User(username, password))
-                .enqueue(new Callback<ApiResponse<com.example.android_mech_app.Models.User>>() {
-                    @Override
-                    public void onResponse(Call<ApiResponse<com.example.android_mech_app.Models.User>> call, Response<ApiResponse<com.example.android_mech_app.Models.User>> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            Toast.makeText(MainActivity.this, "User created successfully!", Toast.LENGTH_SHORT).show();
-                            switchToLogin();
-                        } else {
-                            Toast.makeText(MainActivity.this, "Failed to create user", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<ApiResponse<com.example.android_mech_app.Models.User>> call, Throwable t) {
-                        Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                        Timber.e(t, "Create user failed");
-                    }
-                });
+    private void saveUserProfileLocally(UserProfile profile) {
+        Gson gson = new Gson();
+        String profileString = gson.toJson(profile);
+        prefs.edit().putString(KEY_USER_PROFILE, profileString).apply();
     }
 
-    // --- Create UserProfile ---
-    private void handleCreateUserProfile() {
-        String firstName = etProfileFirstName.getText().toString().trim();
-        String lastName = etProfileLastName.getText().toString().trim();
-        String phone = etProfilePhone.getText().toString().trim();
-        String address = etProfileAddress.getText().toString().trim();
-
-        if (TextUtils.isEmpty(firstName) || TextUtils.isEmpty(lastName) ||
-                TextUtils.isEmpty(phone) || TextUtils.isEmpty(address)) {
-            Toast.makeText(this, "Fill all fields", Toast.LENGTH_SHORT).show();
-            return;
+    private UserProfile getSavedUserProfile() {
+        Gson gson = new Gson();
+        String profileString = prefs.getString(KEY_USER_PROFILE, null);
+        if (profileString != null) {
+            return gson.fromJson(profileString, UserProfile.class);
         }
+        return null;
+    }
 
-        UserProfile profile = new UserProfile();
-        profile.setFirstName(firstName);
-        profile.setLastName(lastName);
-        profile.setPhoneNumber(phone);
-        profile.setAddress(address);
-
-        Set<Role> roles = new HashSet<>();
-        roles.add(Role.CLIENT);
-        profile.setRoles(roles);
-
-        String authHeader = "Bearer " + accessToken;
-        userProfileApi.createProfile(authHeader, profile).enqueue(new Callback<ApiResponse<UserProfile>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<UserProfile>> call, Response<ApiResponse<UserProfile>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(MainActivity.this, "Profile created successfully!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(MainActivity.this, ClientActivity.class));
-                    finish();
-                } else {
-                    Toast.makeText(MainActivity.this, "Failed to create profile", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<UserProfile>> call, Throwable t) {
-                Toast.makeText(MainActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                Timber.e(t, "Create profile failed");
-            }
-        });
+    // -------------------- NAVIGATE BY ROLE --------------------
+    private void navigateToRole(String role) {
+        switch (role.toUpperCase()) {
+            case "CLIENT":
+                startActivity(new Intent(this, ClientActivity.class));
+                break;
+            case "MECHANIC":
+                startActivity(new Intent(this, MechanicActivity.class));
+                break;
+            case "CARWASH":
+                startActivity(new Intent(this, CarWashActivity.class));
+                break;
+            case "ADMIN":
+                startActivity(new Intent(this, AdminActivity.class));
+                break;
+            default:
+                startActivity(new Intent(this, CarWashActivity.class));
+        }
+        finish();
     }
 }

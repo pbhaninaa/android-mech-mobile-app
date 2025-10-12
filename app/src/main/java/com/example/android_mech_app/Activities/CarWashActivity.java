@@ -21,93 +21,54 @@ import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.Earning;
+import com.example.android_mech_app.Models.Payment;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Utils;
+import com.example.android_mech_app.api.ApiClient;
+import com.example.android_mech_app.api.ApiHandler;
+import com.example.android_mech_app.api.ApiService;
 import com.google.android.material.navigation.NavigationView;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class CarWashActivity extends AppCompatActivity {
+
     // Dashboard views
-    DrawerLayout drawerLayout;
-    ConstraintLayout HomeScreen, ProfileScreen, BookingsScreen, ManageWashesScreen, EarningsScreen, SettingsScreen;
-    NavigationView navigationView;
-    Toolbar toolbar;
-    TextView loggedUserName;
+    private DrawerLayout drawerLayout;
+    private ConstraintLayout HomeScreen, ProfileScreen, BookingsScreen, ManageWashesScreen, EarningsScreen, SettingsScreen;
+    private NavigationView navigationView;
+    private Toolbar toolbar;
+    private TextView loggedUserName;
 
     // Profile views
-    TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile,Logout;
+    private TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
+    private Button btnEditProfile, Logout;
 
     // Earnings
-    RecyclerView recyclerEarnings;
-    EarningsAdapter earningsAdapter;
+    private RecyclerView recyclerEarnings;
+    private EarningsAdapter earningsAdapter;
+
+    private ApiHandler apiHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_car_wash);
 
-        // Initialize views
         initialiseViews();
-
-        // Toolbar and Drawer
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Nice and Clean Car Wash");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close);
-
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
-        // Navigation item click handling
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                int id = item.getItemId();
-
-                if (id == R.id.nav_home) {
-                    showScreen(HomeScreen);
-                    Toast.makeText(CarWashActivity.this, "Home clicked", Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.nav_profile) {
-                    showScreen(ProfileScreen);
-                    Toast.makeText(CarWashActivity.this, "Profile clicked", Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.bookings) {
-                    showScreen(BookingsScreen);
-                    loadManageBookings();
-                    Toast.makeText(CarWashActivity.this, "Bookings clicked", Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.manage_washes) {
-                    showScreen(ManageWashesScreen);
-                    loadManageWashes();
-                    Toast.makeText(CarWashActivity.this, "Manage Washes clicked", Toast.LENGTH_SHORT).show();
-                } else if (id == R.id.nav_earnings) {
-                    showScreen(EarningsScreen);
-                    setupEarnings(); // 🔥 Load demo data
-                } else if (id == R.id.nav_settings) {
-                    showScreen(SettingsScreen);
-                    Toast.makeText(CarWashActivity.this, "Settings clicked", Toast.LENGTH_SHORT).show();
-                }
-
-                drawerLayout.closeDrawer(GravityCompat.START);
-                return true;
-            }
-        });
+        setupToolbarAndDrawer();
+        setupNavigation();
 
         // Show Home screen by default
         showScreen(HomeScreen);
     }
 
     private void initialiseViews() {
-        // Dashboard
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.navigationView);
         toolbar = findViewById(R.id.toolbar);
         loggedUserName = findViewById(R.id.loggedUsername);
+
         HomeScreen = findViewById(R.id.dashboard);
         ProfileScreen = findViewById(R.id.profile);
         BookingsScreen = findViewById(R.id.bookings);
@@ -115,7 +76,6 @@ public class CarWashActivity extends AppCompatActivity {
         EarningsScreen = findViewById(R.id.earnings);
         SettingsScreen = findViewById(R.id.settings);
 
-        // Profile
         txtFullName = findViewById(R.id.txtFullName);
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
@@ -126,20 +86,56 @@ public class CarWashActivity extends AppCompatActivity {
         txtUpdatedAt = findViewById(R.id.txtUpdatedAt);
         btnEditProfile = findViewById(R.id.btnEditProfile);
 
-        // Earnings
         recyclerEarnings = findViewById(R.id.recyclerEarnings);
         recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
-        Logout=findViewById(R.id.btnLogout);
 
+        Logout = findViewById(R.id.btnLogout);
+        Logout.setOnClickListener(v -> Utils.logout(this));
 
+        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
+        apiHandler = new ApiHandler(apiService);
+    }
 
-        Logout.setOnClickListener(v->{
-            Utils.logout(this);
+    private void setupToolbarAndDrawer() {
+        setSupportActionBar(toolbar);
+        toolbar.setTitle("Nice and Clean Car Wash");
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+    }
+
+    private void setupNavigation() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                showScreen(HomeScreen);
+            } else if (id == R.id.nav_profile) {
+                showScreen(ProfileScreen);
+            } else if (id == R.id.bookings) {
+                showScreen(BookingsScreen);
+                loadManageBookings();
+            } else if (id == R.id.manage_washes) {
+                showScreen(ManageWashesScreen);
+                loadManageWashes();
+            } else if (id == R.id.nav_earnings) {
+                showScreen(EarningsScreen);
+                setupEarnings();
+            } else if (id == R.id.nav_settings) {
+                showScreen(SettingsScreen);
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
         });
     }
 
     private void showScreen(ConstraintLayout screenToShow) {
-        // Hide all screens
         HomeScreen.setVisibility(View.GONE);
         ProfileScreen.setVisibility(View.GONE);
         BookingsScreen.setVisibility(View.GONE);
@@ -147,94 +143,67 @@ public class CarWashActivity extends AppCompatActivity {
         EarningsScreen.setVisibility(View.GONE);
         SettingsScreen.setVisibility(View.GONE);
 
-        // Show selected screen
         screenToShow.setVisibility(View.VISIBLE);
     }
+
     private void loadManageWashes() {
-        List<CarWashBooking> bookings = new ArrayList<>();
+        apiHandler.getCarWashBookingById(Utils.getLoggedInUserId(this), new ApiHandler.ApiCallback<CarWashBooking>() {
+            @Override
+            public void onSuccess(CarWashBooking booking) {
+                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
+                manageBookings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
+                manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking)));
+            }
 
-        bookings.add(new CarWashBooking("TBhani", "dg", "SUV", "gdf",
-                List.of("Exterior Wash"), 50.0, "2025-09-19", "e"));
-        bookings.get(0).setStatus("Completed");
-
-        bookings.add(new CarWashBooking("TBhani", "yu", "SUV", "ugv",
-                Arrays.asList("Exterior Wash", "Full Wash"), 170.0, "2025-09-19", "ty"));
-        bookings.get(1).setStatus("Completed");
-
-        bookings.add(new CarWashBooking("TBhani", "u4tu6", "Sedan", "rtujrtu",
-                Arrays.asList("Full Wash", "Exterior Wash"), 170.0, "2025-09-18", "wgwrgergh"));
-        bookings.get(2).setStatus("Completed");
-
-        bookings.add(new CarWashBooking("TBhani", "jfyjfyjfh", "SUV", "ryui",
-                Arrays.asList("Interior Cleaning","Exterior Wash","Undercarriage Wash","Engine Wash","Valet Service"), 540.0, "2025-09-21", "fjkyfhkhkghk"));
-        bookings.get(3).setStatus("In Progress");
-
-        RecyclerView manageWashes = findViewById(R.id.recyclerManageWashes);
-        manageWashes.setLayoutManager(new LinearLayoutManager(this));
-        ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
-        manageWashes.setAdapter(adapter);
-
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, "Failed to load booking: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
 
     }
+
     private void loadManageBookings() {
-        List<CarWashBooking> bookings = new ArrayList<>();
+        apiHandler.getCarWashBookingById(Utils.getLoggedInUserId(this), new ApiHandler.ApiCallback<CarWashBooking>() {
+            @Override
+            public void onSuccess(CarWashBooking booking) {
+                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
+                manageBookings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
+                manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking))); // Wrap single booking in a list
+            }
 
-        bookings.add(new CarWashBooking("TBhani", "dg", "SUV", "gdf",
-                List.of("Exterior Wash"), 50.0, "2025-09-19", "e"));
-        bookings.get(0).setStatus("Pending");
-
-        bookings.add(new CarWashBooking("TBhani", "yu", "SUV", "ugv",
-                Arrays.asList("Exterior Wash", "Full Wash"), 170.0, "2025-09-19", "ty"));
-        bookings.get(1).setStatus("Pending");
-
-        bookings.add(new CarWashBooking("TBhani", "u4tu6", "Sedan", "rtujrtu",
-                Arrays.asList("Full Wash", "Exterior Wash"), 170.0, "2025-09-18", "wgwrgergh"));
-        bookings.get(2).setStatus("Pending");
-
-        bookings.add(new CarWashBooking("TBhani", "jfyjfyjfh", "SUV", "ryui",
-                Arrays.asList("Interior Cleaning","Exterior Wash","Undercarriage Wash","Engine Wash","Valet Service"), 540.0, "2025-09-21", "fjkyfhkhkghk"));
-        bookings.get(3).setStatus("Pending");
-
-
-        RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
-        manageBookings.setLayoutManager(new LinearLayoutManager(this));
-        ManageWashesAdapter adapter = new ManageWashesAdapter(bookings);
-        manageBookings.setAdapter(adapter);
-
-
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, "Failed to load booking: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
+
 
     private void setupEarnings() {
-        RecyclerView recyclerView = findViewById(R.id.recyclerEarnings);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        Long userId = Utils.getLoggedInUserId(this);
 
-        List<Earning> demoEarnings = new ArrayList<>();
-        demoEarnings.add(new Earning(
-                8,                // id
-                45.0,             // amount
-                "TBhani",         // clientUsername
-                1,                // jobId
-                null,             // mechanicId
-                5,                // carWashId
-                5.0,              // platformFee
-                "2025-09-19T23:01:53", // paidAt
-                "Car Wash service"      // jobDescription
-        ));
+        apiHandler.getPaymentsByCarWash(userId, new ApiHandler.ApiCallback<List<Payment>>() {
+            @Override
+            public void onSuccess(List<Payment> payments) {
+                if (payments == null || payments.isEmpty()) {
+                    Toast.makeText(CarWashActivity.this, "No earnings found.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-        demoEarnings.add(new Earning(
-                9,
-                153.0,
-                "TBhani",
-                2,
-                null,
-                5,
-                17.0,
-                "2025-09-19T23:04:46",
-                "Car Wash service"
-        ));
+                // Setup RecyclerView directly with Payment list
+                if (recyclerEarnings.getLayoutManager() == null) {
+                    recyclerEarnings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
+                }
+                earningsAdapter = new EarningsAdapter(payments); // Accept List<Payment>
+                recyclerEarnings.setAdapter(earningsAdapter);
+            }
 
-        EarningsAdapter adapter = new EarningsAdapter(demoEarnings);
-        recyclerView.setAdapter(adapter);
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, "Failed to load earnings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 

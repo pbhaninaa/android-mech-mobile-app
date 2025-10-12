@@ -18,8 +18,12 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.android_mech_app.Models.UserProfile;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Utils;
+import com.example.android_mech_app.api.ApiClient;
+import com.example.android_mech_app.api.ApiHandler;
+import com.example.android_mech_app.api.ApiService;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
@@ -35,52 +39,23 @@ public class AdminActivity extends AppCompatActivity {
 
     // Profile views
     TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile,Logout;
+    Button btnEditProfile, btnLogout;
 
     // User Management views
     RecyclerView usersRecyclerView;
     UserAdapter userAdapter;
     List<User> userList = new ArrayList<>();
 
+    private ApiHandler apiHandler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin);
 
-        // Initialize views
         initialiseViews();
-
-        // Toolbar and Drawer
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Admin side");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close);
-
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
-
-        // Navigation item click handling
-        navigationView.setNavigationItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_home) {
-                showScreen(HomeScreen);
-                Toast.makeText(this, "Home", Toast.LENGTH_SHORT).show();
-            } else if (id == R.id.nav_profile) {
-                showScreen(ProfileScreen);
-                loadProfileData();
-            } else if (id == R.id.user_management) {
-                showScreen(UserManagementScreen);
-                loadUsers();
-            } else if (id == R.id.nav_settings) {
-                showScreen(SettingsScreen);
-            }
-            drawerLayout.closeDrawer(GravityCompat.START);
-            return true;
-        });
+        setupToolbarDrawer();
+        setupNavigation();
 
         // Default screen
         showScreen(HomeScreen);
@@ -89,20 +64,22 @@ public class AdminActivity extends AppCompatActivity {
         btnEditProfile.setOnClickListener(v ->
                 Toast.makeText(this, "Go to Edit Profile screen", Toast.LENGTH_SHORT).show()
         );
+
+        // Logout
+        btnLogout.setOnClickListener(v -> Utils.logout(this));
     }
 
     private void initialiseViews() {
-        // Dashboard
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.admin_navigationView);
         toolbar = findViewById(R.id.admin_toolbar);
         loggedUserName = findViewById(R.id.loggedUsername);
+
         HomeScreen = findViewById(R.id.admin_dashboard);
         ProfileScreen = findViewById(R.id.admin_profile);
         SettingsScreen = findViewById(R.id.admin_settings);
         UserManagementScreen = findViewById(R.id.admin_user_management);
 
-        // Profile
         txtFullName = findViewById(R.id.txtFullName);
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
@@ -112,17 +89,54 @@ public class AdminActivity extends AppCompatActivity {
         txtCreatedAt = findViewById(R.id.txtCreatedAt);
         txtUpdatedAt = findViewById(R.id.txtUpdatedAt);
         btnEditProfile = findViewById(R.id.btnEditProfile);
+        btnLogout = findViewById(R.id.btnLogout);
 
-        // User Management
         usersRecyclerView = findViewById(R.id.usersRecyclerView);
         usersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        Logout=findViewById(R.id.btnLogout);
 
+        // Setup ApiHandler
+        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
+        apiHandler = new ApiHandler(apiService);
+    }
 
+    // ----------------- Toolbar & Drawer -----------------
+    private void setupToolbarDrawer() {
+        setSupportActionBar(toolbar);
+        toolbar.setTitle("Admin Dashboard");
 
-        Logout.setOnClickListener(v->{
-            Utils.logout(this);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+    }
+
+    // ----------------- Navigation -----------------
+    private void setupNavigation() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                showScreen(HomeScreen);
+            } else if (id == R.id.nav_profile) {
+                showScreen(ProfileScreen);
+                loadProfileData();
+            } else if (id == R.id.user_management) {
+                showScreen(UserManagementScreen);
+                loadUsers();
+            } else if (id == R.id.nav_settings) {
+                showScreen(SettingsScreen);
+            } else {
+                showScreen(HomeScreen);
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
         });
+
+        navigationView.setCheckedItem(R.id.nav_home);
     }
 
     private void showScreen(ConstraintLayout screenToShow) {
@@ -134,32 +148,58 @@ public class AdminActivity extends AppCompatActivity {
         screenToShow.setVisibility(View.VISIBLE);
     }
 
-    @SuppressLint("SetTextI18n")
+    // ----------------- Load Profile -----------------
     private void loadProfileData() {
-        // Mock profile data
-        txtFullName.setText("John Doe");
-        txtUsername.setText("johndoe");
-        txtEmail.setText("john@example.com");
-        txtPhone.setText("123-456-7890");
-        txtRoles.setText("ADMIN, USER");
-        txtStatus.setText("Enabled");
-        txtCreatedAt.setText("2025-01-01 10:00");
-        txtUpdatedAt.setText("2025-09-20 15:30");
+        String token = Utils.getAuthToken(this);
+        apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                String fullName = String.format("%s %s",
+                        profile.getLastName() != null ? profile.getLastName() : "",
+                        profile.getFirstName() != null ? profile.getFirstName() : "");
+                txtFullName.setText(fullName);
+                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
+                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
+                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
+                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "");
+                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
+                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(AdminActivity.this, "Failed to load profile: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
+    // ----------------- Load Users -----------------
     private void loadUsers() {
-        userList.clear();
-        userList.add(new User("Alice Smith", "alice", "alice@mail.com", "123456789", "ADMIN"));
-        userList.add(new User("Bob Johnson", "bobby", "bob@mail.com", "987654321", "USER"));
-        userList.add(new User("Carol White", "carolw", "carol@mail.com", "555555555", "MODERATOR"));
+        String token = Utils.getAuthToken(this);
 
-        userAdapter = new UserAdapter(userList);
-        usersRecyclerView.setAdapter(userAdapter);
+        apiHandler.getAllUsers(token, new ApiHandler.ApiCallback<List<com.example.android_mech_app.Models.User>>() {
+            @Override
+            public void onSuccess(List<com.example.android_mech_app.Models.User> users) {
+                userList.clear();
+//                userList.addAll(users);  // Add API users to the list
+
+                if (userAdapter == null) {
+                    userAdapter = new UserAdapter(userList);
+                    usersRecyclerView.setAdapter(userAdapter);
+                } else {
+                    userAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(AdminActivity.this,
+                        "Failed to load users: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    // ------------------------------
-    // Inner User model class
-    // ------------------------------
+    // ----------------- User model -----------------
     static class User {
         String fullName, username, email, phone, roles;
 
@@ -172,15 +212,11 @@ public class AdminActivity extends AppCompatActivity {
         }
     }
 
-    // ------------------------------
-    // Inner RecyclerView Adapter
-    // ------------------------------
+    // ----------------- User Adapter -----------------
     class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
         List<User> users;
 
-        UserAdapter(List<User> users) {
-            this.users = users;
-        }
+        UserAdapter(List<User> users) { this.users = users; }
 
         @NonNull
         @Override
@@ -206,9 +242,7 @@ public class AdminActivity extends AppCompatActivity {
         }
 
         @Override
-        public int getItemCount() {
-            return users.size();
-        }
+        public int getItemCount() { return users.size(); }
 
         class UserViewHolder extends RecyclerView.ViewHolder {
             TextView tvFullName, tvUsername, tvEmail, tvPhone, tvRoles;

@@ -1,14 +1,12 @@
 package com.example.android_mech_app.Activities;
 
-import android.os.Build;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -20,216 +18,252 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.JobRequestsAdapter;
-import com.example.android_mech_app.Adapters.ManageWashesAdapter;
-import com.example.android_mech_app.Models.CarWashBooking;
-import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.MechanicRequest;
+import com.example.android_mech_app.Models.Payment;
+import com.example.android_mech_app.Models.UserProfile;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Role;
 import com.example.android_mech_app.Utils;
+import com.example.android_mech_app.api.ApiClient;
+import com.example.android_mech_app.api.ApiHandler;
+import com.example.android_mech_app.api.ApiService;
 import com.google.android.material.navigation.NavigationView;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+
 public class MechanicActivity extends AppCompatActivity {
 
+    // Dashboard views
+    private DrawerLayout drawerLayout;
+    private ConstraintLayout HomeScreen, ProfileScreen, JobRequestScreen, EarningsScreen, SettingsScreen;
+    private NavigationView navigationView;
+    private Toolbar toolbar;
+    private TextView loggedUserName;
 
+    // Profile views
+    private TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
+    private Button btnEditProfile, btnLogout;
 
-        // Dashboard views
-        DrawerLayout drawerLayout;
-        ConstraintLayout HomeScreen, ProfileScreen, JobRequestScreen, EarningsScreen, SettingsScreen;
-        NavigationView navigationView;
-        Toolbar toolbar;
-        TextView loggedUserName;
+    // Earnings
+    private RecyclerView recyclerEarnings;
+    private EarningsAdapter earningsAdapter;
 
-        // Profile views
-        TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-        Button btnEditProfile,Logout;
+    private ApiHandler apiHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_mechanic);
+
+        initialiseViews();
+        setupToolbarAndDrawer();
+        setupNavigation();
+
+        // Show Home screen by default
+        showScreen(HomeScreen);
+    }
+
+    private void initialiseViews() {
+        // Dashboard
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigationView);
+        toolbar = findViewById(R.id.toolbar);
+        loggedUserName = findViewById(R.id.loggedUsername);
+        HomeScreen = findViewById(R.id.dashboard);
+        ProfileScreen = findViewById(R.id.profile);
+        JobRequestScreen = findViewById(R.id.job_request);
+        EarningsScreen = findViewById(R.id.earnings);
+        SettingsScreen = findViewById(R.id.settings);
+
+        // Profile
+        txtFullName = findViewById(R.id.txtFullName);
+        txtUsername = findViewById(R.id.txtUsername);
+        txtEmail = findViewById(R.id.txtEmail);
+        txtPhone = findViewById(R.id.txtPhone);
+        txtRoles = findViewById(R.id.txtRoles);
+        txtStatus = findViewById(R.id.txtStatus);
+        txtCreatedAt = findViewById(R.id.txtCreatedAt);
+        txtUpdatedAt = findViewById(R.id.txtUpdatedAt);
+        btnEditProfile = findViewById(R.id.btnEditProfile);
 
         // Earnings
-        RecyclerView recyclerEarnings;
-        EarningsAdapter earningsAdapter;
+        recyclerEarnings = findViewById(R.id.recyclerEarnings);
+        recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
 
-        @Override
-        protected void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            setContentView(R.layout.activity_mechanic);
+        // Logout button
+        btnLogout = findViewById(R.id.btnLogout);
+        btnLogout.setOnClickListener(v -> Utils.logout(this));
 
-            // Initialize views
-            initialiseViews();
+        // API handler
+        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
+        apiHandler = new ApiHandler(apiService);
+    }
 
-            // Toolbar and Drawer
-            setSupportActionBar(toolbar);
-            toolbar.setTitle("Mechanic Dash");
+    private void setupToolbarAndDrawer() {
+        setSupportActionBar(toolbar);
+        toolbar.setTitle("Mechanic Dashboard");
 
-            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                    this, drawerLayout, toolbar,
-                    R.string.navigation_drawer_open,
-                    R.string.navigation_drawer_close);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawerLayout, toolbar,
+                R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close
+        );
+        drawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+    }
 
-            drawerLayout.addDrawerListener(toggle);
-            toggle.syncState();
+    private void setupNavigation() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
 
-            // Navigation item click handling
-            navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-                @Override
-                public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                    int id = item.getItemId();
+            if (id == R.id.nav_home) {
+                showScreen(HomeScreen);
+            } else if (id == R.id.nav_profile) {
+                showScreen(ProfileScreen);
+                loadProfile();
+            } else if (id == R.id.nav_job_request) {
+                showScreen(JobRequestScreen);
+                loadJobRequests();
+            } else if (id == R.id.nav_earnings) {
+                showScreen(EarningsScreen);
+                setupEarnings();
+            } else if (id == R.id.nav_settings) {
+                showScreen(SettingsScreen);
+            }
 
-                    if (id == R.id.nav_home) {
-                        showScreen(HomeScreen);
-                    } else if (id == R.id.nav_profile) {
-                        showScreen(ProfileScreen);
-                    } else if (id == R.id.nav_job_request) {
-                        showScreen(JobRequestScreen);
-                        loadJobRequests();
-                    } else if (id == R.id.nav_earnings) {
-                        showScreen(EarningsScreen);
-                        setupEarnings();
-                    } else if (id == R.id.nav_settings) {
-                        showScreen(SettingsScreen);
-                    }
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
+    }
 
-                    drawerLayout.closeDrawer(GravityCompat.START);
-                    return true;
-                }
-            });
+    private void showScreen(ConstraintLayout screenToShow) {
+        HomeScreen.setVisibility(ConstraintLayout.GONE);
+        ProfileScreen.setVisibility(ConstraintLayout.GONE);
+        JobRequestScreen.setVisibility(ConstraintLayout.GONE);
+        EarningsScreen.setVisibility(ConstraintLayout.GONE);
+        SettingsScreen.setVisibility(ConstraintLayout.GONE);
 
-            // Show Home screen by default
-            showScreen(HomeScreen);
-        }
+        screenToShow.setVisibility(ConstraintLayout.VISIBLE);
+    }
 
-        private void initialiseViews() {
-            // Dashboard
-            drawerLayout = findViewById(R.id.drawerLayout);
-            navigationView = findViewById(R.id.navigationView);
-            toolbar = findViewById(R.id.toolbar);
-            loggedUserName = findViewById(R.id.loggedUsername);
-            HomeScreen = findViewById(R.id.dashboard);
-            ProfileScreen = findViewById(R.id.profile);
-            JobRequestScreen = findViewById(R.id.job_request);
-            EarningsScreen = findViewById(R.id.earnings);
-            SettingsScreen = findViewById(R.id.settings);
-
-            // Profile
-            txtFullName = findViewById(R.id.txtFullName);
-            txtUsername = findViewById(R.id.txtUsername);
-            txtEmail = findViewById(R.id.txtEmail);
-            txtPhone = findViewById(R.id.txtPhone);
-            txtRoles = findViewById(R.id.txtRoles);
-            txtStatus = findViewById(R.id.txtStatus);
-            txtCreatedAt = findViewById(R.id.txtCreatedAt);
-            txtUpdatedAt = findViewById(R.id.txtUpdatedAt);
-            btnEditProfile = findViewById(R.id.btnEditProfile);
-
-            // Earnings
-            recyclerEarnings = findViewById(R.id.recyclerEarnings);
-            recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
-
-            Logout=findViewById(R.id.btnLogout);
-
-
-
-            Logout.setOnClickListener(v->{
-                Utils.logout(this);
-            });
-        }
-
-        private void showScreen(ConstraintLayout screenToShow) {
-            // Hide all screens
-            HomeScreen.setVisibility(View.GONE);
-            ProfileScreen.setVisibility(View.GONE);
-            EarningsScreen.setVisibility(View.GONE);
-            SettingsScreen.setVisibility(View.GONE);
-            JobRequestScreen.setVisibility(View.GONE);
-
-            // Show selected screen
-            screenToShow.setVisibility(View.VISIBLE);
-        }
-
+    // ------------------- Job Requests -------------------
     private void loadJobRequests() {
-        List<MechanicRequest> requests = new ArrayList<>();
+        String username = Utils.getLoggedInUsername(this);
 
-        requests.add(new MechanicRequest() {{
-            setId(1L);
-            setUsername("TBhani");
-            setDescription("Replace brake pads");
-            setLocation("Buccleuch, Johannesburg Ward 32, Sandton, City of Johannesburg, Gauteng, 2054, South Africa");
-            setLatitude(-26.0679378);
-            setLongitude(28.1027465);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                setDate(LocalDate.of(2025, 9, 18));
+        apiHandler.getMechanicRequestsByUsername(username, new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+            @Override
+            public void onSuccess(List<MechanicRequest> requests) {
+                RecyclerView jobRequestsRecycler = findViewById(R.id.recyclerJobRequests);
+                jobRequestsRecycler.setLayoutManager(new LinearLayoutManager(MechanicActivity.this));
+                JobRequestsAdapter adapter = new JobRequestsAdapter(requests, Role.MECHANIC);
+                jobRequestsRecycler.setAdapter(adapter);
             }
-            setStatus("pending");
-        }});
 
-        requests.add(new MechanicRequest() {{
-            setId(2L);
-            setUsername("JSmith");
-            setDescription("Oil change");
-            setLocation("Rosebank, Johannesburg, Gauteng, 2196, South Africa");
-            setLatitude(-26.123456);
-            setLongitude(28.123456);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                setDate(LocalDate.of(2025, 9, 20));
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MechanicActivity.this, "Failed to load requests: " + errorMessage, Toast.LENGTH_SHORT).show();
             }
-            setStatus("pending");
-        }});
+        });
+    }
 
-        requests.add(new MechanicRequest() {{
-            setId(3L);
-            setUsername("AMkhize");
-            setDescription("Battery replacement");
-            setLocation("Sandton, Johannesburg, Gauteng, 2196, South Africa");
-            setLatitude(-26.065432);
-            setLongitude(28.102345);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                setDate(LocalDate.of(2025, 9, 21));
+    // ------------------- Earnings -------------------
+    private void setupEarnings() {
+        Long mechanicId = Utils.getLoggedInUserId(this);
+
+        apiHandler.getPaymentsByMechanic(mechanicId, new ApiHandler.ApiCallback<List<Payment>>() {
+            @Override
+            public void onSuccess(List<Payment> payments) {
+                earningsAdapter = new EarningsAdapter(payments);
+                recyclerEarnings.setAdapter(earningsAdapter);
             }
-            setStatus("pending");
-        }});
-        Role role = Role.MECHANIC;
-        RecyclerView jobRequestsRecycler = findViewById(R.id.recyclerJobRequests);
-        jobRequestsRecycler.setLayoutManager(new LinearLayoutManager(this));
-        JobRequestsAdapter adapter = new JobRequestsAdapter(requests,role);
-        jobRequestsRecycler.setAdapter(adapter);
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MechanicActivity.this, "Failed to load earnings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ------------------- Profile -------------------
+    private void loadProfile() {
+        if (loadProfileFromCache()) return; // Load from cache if exists
+
+        String token = Utils.getAuthToken(this);
+
+        apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                // Full name
+                String fullName = String.format("%s %s",
+                        profile.getLastName() != null ? profile.getLastName() : "",
+                        profile.getFirstName() != null ? profile.getFirstName() : "");
+                txtFullName.setText(fullName);
+
+                // Username, email, phone
+                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
+                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
+                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
+
+                // Single role
+                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "No role");
+
+                // Dates (createdAt and updatedAt)
+                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
+                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
+
+                // Status (if you add a getStatus method in UserProfile)
+                // txtStatus.setText(profile.getStatus() != null ? profile.getStatus() : "");
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MechanicActivity.this, "Failed to load profile: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 
-        private void setupEarnings() {
-            RecyclerView recyclerView = findViewById(R.id.recyclerEarnings);
-            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    // ------------------- Local caching -------------------
+    private void saveProfileLocally(UserProfile profile) {
+        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
 
-            List<Earning> demoEarnings = new ArrayList<>();
-            demoEarnings.add(new Earning(
-                    8,                // id
-                    45.0,             // amount
-                    "TBhani",         // clientUsername
-                    1,                // jobId
-                    null,             // mechanicId
-                    5,                // carWashId
-                    5.0,              // platformFee
-                    "2025-09-19T23:01:53", // paidAt
-                    "Car Wash service"      // jobDescription
-            ));
+        editor.putString("PROFILE_FIRSTNAME", profile.getFirstName());
+        editor.putString("PROFILE_LASTNAME", profile.getLastName());
+        editor.putString("PROFILE_USERNAME", profile.getUsername());
+        editor.putString("PROFILE_EMAIL", profile.getEmail());
+        editor.putString("PROFILE_PHONE", profile.getPhoneNumber());
 
-            demoEarnings.add(new Earning(
-                    9,
-                    153.0,
-                    "TBhani",
-                    2,
-                    null,
-                    5,
-                    17.0,
-                    "2025-09-19T23:04:46",
-                    "Car Wash service"
-            ));
+        // Save single role
+        editor.putString("PROFILE_ROLE", profile.getRole() != null ? profile.getRole() : "No role");
 
-            EarningsAdapter adapter = new EarningsAdapter(demoEarnings);
-            recyclerView.setAdapter(adapter);
+        // Convert LocalDateTime to string
+        editor.putString("PROFILE_CREATED_AT", profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
+        editor.putString("PROFILE_UPDATED_AT", profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
+
+        // Status if needed
+        // editor.putString("PROFILE_STATUS", profile.getStatus());
+
+        editor.apply();
+    }
+
+
+
+    private boolean loadProfileFromCache() {
+        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
+        String username = prefs.getString("PROFILE_USERNAME", null);
+
+        if (username != null) {
+            txtFullName.setText(prefs.getString("PROFILE_FULLNAME", ""));
+            txtUsername.setText(username);
+            txtEmail.setText(prefs.getString("PROFILE_EMAIL", ""));
+            txtPhone.setText(prefs.getString("PROFILE_PHONE", ""));
+            txtRoles.setText(prefs.getString("PROFILE_ROLES", ""));
+            txtStatus.setText(prefs.getString("PROFILE_STATUS", ""));
+            txtCreatedAt.setText(prefs.getString("PROFILE_CREATED_AT", ""));
+            txtUpdatedAt.setText(prefs.getString("PROFILE_UPDATED_AT", ""));
+            return true;
         }
-
-
+        return false;
     }
+}
