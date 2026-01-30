@@ -58,6 +58,7 @@ public class MechanicActivity extends AppCompatActivity {
         initialiseViews();
         setupToolbarAndDrawer();
         setupNavigation();
+        loadProfile();
 
         // Show Home screen by default
         showScreen(HomeScreen);
