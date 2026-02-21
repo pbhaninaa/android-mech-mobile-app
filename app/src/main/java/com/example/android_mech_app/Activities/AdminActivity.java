@@ -164,6 +164,7 @@ public class AdminActivity extends AppCompatActivity {
                 txtRoles.setText(profile.getRole() != null ? profile.getRole() : "");
                 txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
                 txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
+                loggedUserName.setText(fullName);
             }
 
             @Override

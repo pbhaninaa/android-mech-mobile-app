@@ -8,11 +8,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
@@ -31,6 +31,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_mech_app.Adapters.EarningsAdapter;
+import com.example.android_mech_app.Adapters.FaqAdapter;
 import com.example.android_mech_app.Adapters.JobRequestsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
 import com.example.android_mech_app.Models.CarWashBooking;
@@ -59,7 +60,7 @@ public class ClientActivity extends AppCompatActivity {
 
     // Screens
     private ConstraintLayout HomeScreen, ProfileScreen, CarWashBookingsScreen,
-            CarWashHistoryScreen, ServiceHistoryScreen, PaymentsScreen,
+            CarWashHistoryScreen,HelpScreen, ServiceHistoryScreen, PaymentsScreen,
             SettingsScreen, ServiceRequestScreen;
 
     // Profile
@@ -83,7 +84,9 @@ public class ClientActivity extends AppCompatActivity {
             "Fix car engine", "Replace brake pads", "Change oil", "Battery replacement",
             "Tire replacement", "AC repair", "Suspension repair", "Other"
     };
-
+    private RecyclerView rvFaqs;
+    private LinearLayout llContactDetails;
+    private Button btnEmail, btnWhatsApp;
     // ----------------- Lifecycle -----------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +100,7 @@ public class ClientActivity extends AppCompatActivity {
         loadUserProfile(); // load profile
         showScreen(HomeScreen); // default screen
         setupRequestMechanic();
+        loadJobRequests();
     }
 
     // ----------------- Initialize Views -----------------
@@ -110,6 +114,7 @@ public class ClientActivity extends AppCompatActivity {
         ProfileScreen = findViewById(R.id.profile);
         CarWashBookingsScreen = findViewById(R.id.carWashBookings);
         CarWashHistoryScreen = findViewById(R.id.bookings);
+        HelpScreen = findViewById(R.id.helpPage);
         ServiceHistoryScreen = findViewById(R.id.service_history);
         PaymentsScreen = findViewById(R.id.earnings);
         SettingsScreen = findViewById(R.id.settings);
@@ -137,8 +142,14 @@ public class ClientActivity extends AppCompatActivity {
         editDate = findViewById(R.id.edit_date);
         btnSubmitRequest = findViewById(R.id.btn_submit_request);
         btnLogout = findViewById(R.id.btnLogout);
-
+//        helpPage = findViewById(R.id.helpPage);
+        rvFaqs = findViewById(R.id.rvFaqs);
+        llContactDetails = findViewById(R.id.llContactDetails);
+        btnEmail = findViewById(R.id.btnEmail);
+        btnWhatsApp = findViewById(R.id.btnWhatsApp);
         btnLogout.setOnClickListener(v -> Utils.logout(this));
+
+
 
         ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
         apiHandler = new ApiHandler(apiService);
@@ -158,7 +169,6 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     // ----------------- Navigation -----------------
-    // ----------------- Navigation -----------------
     private void setupNavigation() {
         navigationView.setNavigationItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -172,16 +182,22 @@ public class ClientActivity extends AppCompatActivity {
             } else if (id == R.id.nav_book_car_wash) {
                 showScreen(CarWashBookingsScreen);
             } else if (id == R.id.nav_service_history) {
-                showScreen(ServiceHistoryScreen);
                 loadJobRequests();
+                showScreen(ServiceHistoryScreen);
+
             } else if (id == R.id.nav_payments) {
-                showScreen(PaymentsScreen);
                 setupPayments();
+                showScreen(PaymentsScreen);
+
             } else if (id == R.id.my_washes) {
-                showScreen(CarWashHistoryScreen);
                 loadManageBookings();
+                showScreen(CarWashHistoryScreen);
+
             } else if (id == R.id.nav_settings) {
                 showScreen(SettingsScreen);
+            } else if (id==R.id.nav_help) {
+                showScreen(HelpScreen);
+                loadHelpData();
             } else {
                 showScreen(HomeScreen);
             }
@@ -194,7 +210,6 @@ public class ClientActivity extends AppCompatActivity {
         navigationView.setCheckedItem(R.id.nav_home);
     }
 
-
     // ----------------- Screen Switch -----------------
     private void showScreen(ConstraintLayout screen) {
         HomeScreen.setVisibility(View.GONE);
@@ -205,26 +220,73 @@ public class ClientActivity extends AppCompatActivity {
         PaymentsScreen.setVisibility(View.GONE);
         SettingsScreen.setVisibility(View.GONE);
         ServiceRequestScreen.setVisibility(View.GONE);
+        HelpScreen.setVisibility(View.GONE);
 
         screen.setVisibility(View.VISIBLE);
     }
+//---------------------Load Help Page---------------------
+private void loadHelpData() {
+    // Sample FAQ data
+    List<String[]> faqs = List.of(
+            new String[]{"How do I book a service?", "You can book a service by selecting your preferred time and confirming your details."},
+            new String[]{"Can I cancel or reschedule?", "Yes, cancellations and rescheduling are allowed up to 24 hours before your appointment."},
+            new String[]{"How do payments work?", "Payments can be made securely through the app using your preferred payment method."}
+    );
 
+    rvFaqs.setLayoutManager(new LinearLayoutManager(this));
+    rvFaqs.setAdapter(new FaqAdapter(faqs));
+    // Admin details
+    String email = "support@mechanicapp.com";
+    String phone = "+27 78 214 1216";
+    String whatsapp = "+27782141216";
+
+    llContactDetails.removeAllViews();
+    TextView tvEmail = new TextView(this); tvEmail.setText("Email: " + email);
+    TextView tvPhone = new TextView(this); tvPhone.setText("Phone: " + phone);
+    TextView tvWhatsapp = new TextView(this); tvWhatsapp.setText("WhatsApp: " + whatsapp);
+    llContactDetails.addView(tvEmail);
+    llContactDetails.addView(tvPhone);
+    llContactDetails.addView(tvWhatsapp);
+
+    btnEmail.setOnClickListener(v -> Utils.sendEmail(this, email));
+    btnWhatsApp.setOnClickListener(v -> Utils.openWhatsApp(this, whatsapp));
+}
     // ----------------- Load Profile -----------------
     private void loadUserProfile() {
         String token = Utils.getAuthToken(this);
         apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
             @Override
             public void onSuccess(UserProfile profile) {
-                String fullName = String.format("%s %s",
-                        profile.getLastName() != null ? profile.getLastName() : "",
-                        profile.getFirstName() != null ? profile.getFirstName() : "");
-                txtFullName.setText(fullName);
-                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
-                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
-                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
-                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "");
-                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
-                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
+                try {
+                    String fullName = String.format("%s %s",
+                            profile.getLastName() != null ? profile.getLastName() : "",
+                            profile.getFirstName() != null ? profile.getFirstName() : "");
+
+                    if (txtFullName != null) txtFullName.setText(fullName);
+                    if (txtUsername != null) txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
+                    if (txtEmail != null) txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
+                    if (txtPhone != null) txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
+
+                    if (txtRoles != null) {
+                        List<String> roles = profile.getRoles();
+                        if (roles != null && !roles.isEmpty()) {
+                            StringBuilder sb = new StringBuilder();
+                            for (String r : roles) sb.append(r).append(", ");
+                            sb.setLength(sb.length() - 2);
+                            txtRoles.setText(sb.toString());
+                        } else {
+                            txtRoles.setText("No roles assigned");
+                        }
+                    }
+
+                    if (txtCreatedAt != null) txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt() : "");
+                    if (txtUpdatedAt != null) txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt() : "");
+                    if (loggedUserName != null) loggedUserName.setText(fullName);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(ClientActivity.this, "Error displaying profile", Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -266,12 +328,14 @@ public class ClientActivity extends AppCompatActivity {
         });
     }
 
-    // ----------------- Car Wash Bookings -----------------
+    // ----------------- Car Wash Bookings ----------------- //
+
     private void loadManageBookings() {
         Long userId = Utils.getLoggedInUserId(this);
         apiHandler.getCarWashBookingById(userId, new ApiHandler.ApiCallback<CarWashBooking>() {
             @Override
             public void onSuccess(CarWashBooking booking) {
+                System.out.println();
                 RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
                 manageBookings.setLayoutManager(new LinearLayoutManager(ClientActivity.this));
                 manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking)));

@@ -3,8 +3,11 @@ package com.example.android_mech_app;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
+import android.widget.Toast;
 
+import com.example.android_mech_app.Activities.ClientActivity;
 import com.example.android_mech_app.Activities.MechanicActivity;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.Earning;
@@ -148,4 +151,27 @@ public class Utils {
         return prefs.getString("ACCESS_TOKEN", null);
     }
 
+    public static void sendEmail(ClientActivity clientActivity, String email) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:" + email));
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Support Request");
+        intent.putExtra(Intent.EXTRA_TEXT, "Hello, I need help with...");
+
+        if (intent.resolveActivity(clientActivity.getPackageManager()) != null) {
+            clientActivity.startActivity(intent);
+        } else {
+            Toast.makeText(clientActivity, "No email app found", Toast.LENGTH_SHORT).show();
+        }
+    }
+    public static void openWhatsApp(ClientActivity clientActivity, String whatsapp) {
+        String url = "https://wa.me/" + whatsapp.replaceAll("\\D", ""); // remove non-digits
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(url));
+
+        if (intent.resolveActivity(clientActivity.getPackageManager()) != null) {
+            clientActivity.startActivity(intent);
+        } else {
+            Toast.makeText(clientActivity, "WhatsApp not installed", Toast.LENGTH_SHORT).show();
+        }
+    }
 }

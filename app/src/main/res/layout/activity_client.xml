@@ -47,6 +47,130 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
         </androidx.constraintlayout.widget.ConstraintLayout>
+<!--        Help Page-->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/helpPage"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_margin="5dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:background="@color/background_light">
+
+            <ScrollView
+                android:id="@+id/scrollHelp"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:fillViewport="true"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp">
+
+                    <!-- Header -->
+                    <TextView
+                        android:id="@+id/tvHelpTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Help Support"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:id="@+id/tvHelpSubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Find answers to common questions or reach out to us directly."
+                        android:textColor="#666666"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- FAQ Section -->
+                    <TextView
+                        android:id="@+id/tvFaqTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Frequently Asked Questions"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"/>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvFaqs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"/>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#DDDDDD"
+                        android:layout_marginVertical="16dp"/>
+
+                    <!-- Admin Contact -->
+                    <TextView
+                        android:id="@+id/tvContactTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Still Need Help?"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp"/>
+
+                    <TextView
+                        android:id="@+id/tvContactDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Our support team is here to assist you."
+                        android:layout_marginBottom="8dp"/>
+
+                    <LinearLayout
+                        android:id="@+id/llContactDetails"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- Buttons -->
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnEmail"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Email Us"
+                            app:icon="@drawable/ic_person"
+                            android:layout_marginEnd="8dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWhatsApp"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="WhatsApp"
+                            app:icon="@drawable/ic_person"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </ScrollView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+<!--         Request Service-->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/request_service"
             android:layout_width="match_parent"
