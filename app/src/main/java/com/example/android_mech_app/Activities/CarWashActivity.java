@@ -22,6 +22,7 @@ import com.example.android_mech_app.Adapters.ManageWashesAdapter;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.Payment;
+import com.example.android_mech_app.Models.UserProfile;
 import com.example.android_mech_app.R;
 import com.example.android_mech_app.Utils;
 import com.example.android_mech_app.api.ApiClient;
@@ -59,7 +60,6 @@ public class CarWashActivity extends AppCompatActivity {
         setupToolbarAndDrawer();
         setupNavigation();
 
-        // Show Home screen by default
         showScreen(HomeScreen);
     }
 
@@ -115,8 +115,11 @@ public class CarWashActivity extends AppCompatActivity {
 
             if (id == R.id.nav_home) {
                 showScreen(HomeScreen);
+                loadUserProfile();
             } else if (id == R.id.nav_profile) {
                 showScreen(ProfileScreen);
+                loadUserProfile();
+
             } else if (id == R.id.bookings) {
                 showScreen(BookingsScreen);
                 loadManageBookings();
@@ -147,61 +150,89 @@ public class CarWashActivity extends AppCompatActivity {
     }
 
     private void loadManageWashes() {
-        apiHandler.getCarWashBookingById(Utils.getLoggedInUserId(this), new ApiHandler.ApiCallback<CarWashBooking>() {
+        apiHandler.getBookingsByClient(this, Utils.getLoggedInUsername(this), new ApiHandler.ApiCallback<List<CarWashBooking>>() {
             @Override
-            public void onSuccess(CarWashBooking booking) {
-                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
-                manageBookings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
-                manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking)));
-            }
-
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(CarWashActivity.this, "Failed to load booking: " + errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
-
-    }
-
-    private void loadManageBookings() {
-        apiHandler.getCarWashBookingById(Utils.getLoggedInUserId(this), new ApiHandler.ApiCallback<CarWashBooking>() {
-            @Override
-            public void onSuccess(CarWashBooking booking) {
-                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
-                manageBookings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
-                manageBookings.setAdapter(new ManageWashesAdapter(List.of(booking))); // Wrap single booking in a list
-            }
-
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(CarWashActivity.this, "Failed to load booking: " + errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-
-    private void setupEarnings() {
-        Long userId = Utils.getLoggedInUserId(this);
-
-        apiHandler.getPaymentsByCarWash(userId, new ApiHandler.ApiCallback<List<Payment>>() {
-            @Override
-            public void onSuccess(List<Payment> payments) {
-                if (payments == null || payments.isEmpty()) {
-                    Toast.makeText(CarWashActivity.this, "No earnings found.", Toast.LENGTH_SHORT).show();
+            public void onSuccess(List<CarWashBooking> bookings) {
+                if (bookings == null || bookings.isEmpty()) {
+                    Toast.makeText(CarWashActivity.this, "No bookings found.", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Setup RecyclerView directly with Payment list
-                if (recyclerEarnings.getLayoutManager() == null) {
-                    recyclerEarnings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
-                }
-                earningsAdapter = new EarningsAdapter(payments); // Accept List<Payment>
-                recyclerEarnings.setAdapter(earningsAdapter);
+                RecyclerView manageBookings = findViewById(R.id.recyclerBookings);
+                manageBookings.setLayoutManager(new LinearLayoutManager(CarWashActivity.this));
+                manageBookings.setAdapter(new ManageWashesAdapter(bookings)); // Pass the list directly
             }
 
             @Override
             public void onFailure(String errorMessage) {
-                Toast.makeText(CarWashActivity.this, "Failed to load earnings: " + errorMessage, Toast.LENGTH_SHORT).show();
+                Toast.makeText(CarWashActivity.this, "Failed to load bookings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadManageBookings() {
+        apiHandler.getAllCarWashBookings(this, new ApiHandler.ApiCallback<List<CarWashBooking>>() {
+            @Override
+            public void onSuccess(List<CarWashBooking> bookings) {
+//                carWashAdapter = new ManageWashesAdapter(bookings);
+//                recyclerCarWashBookings.setAdapter(carWashAdapter);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, "Failed to load bookings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadUserProfile() {
+
+        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
+            @Override
+            public void onSuccess(UserProfile profile) {
+                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
+                txtUsername.setText(profile.getUsername());
+                txtEmail.setText(profile.getEmail());
+                txtPhone.setText(profile.getPhoneNumber());
+                txtCreatedAt.setText(profile.getCreatedAt());
+                txtUpdatedAt.setText(profile.getUpdatedAt());
+                txtRoles.setText(profile.getRole());
+                // Save profile to session
+                Utils.saveProfile(CarWashActivity.this, profile);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+
+                // Fallback to cached profile
+                UserProfile cached = Utils.getProfile(CarWashActivity.this);
+                if (cached != null) {
+                    txtFullName.setText(cached.getFirstName() + " " + cached.getLastName());
+                    txtUsername.setText(cached.getUsername());
+                    txtEmail.setText(cached.getEmail());
+                    txtPhone.setText(cached.getPhoneNumber());
+                    txtCreatedAt.setText(cached.getCreatedAt());
+                    txtUpdatedAt.setText(cached.getUpdatedAt());
+                    Toast.makeText(CarWashActivity.this, "Loaded cached profile", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+    private void setupEarnings() {
+        Long userId = Utils.getLoggedInUserId(this);
+
+        String username = Utils.getLoggedInUsername(this);
+
+        apiHandler.getPaymentsByClient(this,username, new ApiHandler.ApiCallback<List<Payment>>() {
+            @Override
+            public void onSuccess(List<Payment> payments) {
+                recyclerEarnings.setAdapter(new EarningsAdapter(payments));
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(CarWashActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
             }
         });
     }

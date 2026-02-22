@@ -11,6 +11,19 @@
         android:id="@+id/user_management"
         android:title="@string/user_management" />
 
+
+    <item android:id="@+id/nav_payments"
+        android:title="Manage Payments"/>
+
+    <item android:id="@+id/nav_earnings"
+        android:title="Eranings"/>
+
+    <item android:id="@+id/nav_carwah_managements"
+        android:title="Car wash Management"/>
+
+    <item android:id="@+id/na_mechanic_management"
+        android:title="Mechanic Management"/>
+
     <item
         android:id="@+id/nav_settings"
         android:title="@string/settings" />

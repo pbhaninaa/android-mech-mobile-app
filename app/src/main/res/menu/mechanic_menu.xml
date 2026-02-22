@@ -10,6 +10,8 @@
     <item
         android:id="@+id/nav_job_request"
         android:title="@string/job_request" />
+    <item android:id="@+id/nav_manage_requests"
+        android:title="Manage Jobs"/>
     <item
 
         android:id="@+id/nav_earnings"

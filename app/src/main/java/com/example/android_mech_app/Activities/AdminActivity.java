@@ -18,8 +18,16 @@ import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.android_mech_app.Adapters.EarningsAdapter;
+import com.example.android_mech_app.Adapters.JobRequestsAdapter;
+import com.example.android_mech_app.Adapters.ManageWashesAdapter;
+import com.example.android_mech_app.Models.CarWashBooking;
+import com.example.android_mech_app.Models.MechanicRequest;
+import com.example.android_mech_app.Models.Payment;
+import com.example.android_mech_app.Models.User;
 import com.example.android_mech_app.Models.UserProfile;
 import com.example.android_mech_app.R;
+import com.example.android_mech_app.Role;
 import com.example.android_mech_app.Utils;
 import com.example.android_mech_app.api.ApiClient;
 import com.example.android_mech_app.api.ApiHandler;
@@ -31,21 +39,27 @@ import java.util.List;
 
 public class AdminActivity extends AppCompatActivity {
 
-    DrawerLayout drawerLayout;
-    ConstraintLayout HomeScreen, ProfileScreen, UserManagementScreen, SettingsScreen;
-    NavigationView navigationView;
-    Toolbar toolbar;
-    TextView loggedUserName;
+    // Layout & Navigation
+    private DrawerLayout drawerLayout;
+    private ConstraintLayout screenDashboard, screenProfile, screenUserManagement,
+            screenSettings, screenEarnings, screenCarWashManagement, screenMechanicRequests;
+    private NavigationView navigationView;
+    private Toolbar toolbar;
+    private TextView loggedUserName;
 
     // Profile views
-    TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    Button btnEditProfile, btnLogout;
+    private TextView txtFullName, txtUsername, txtEmail, txtPhone,
+            txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
+    private Button btnEditProfile, btnLogout;
 
-    // User Management views
-    RecyclerView usersRecyclerView;
-    UserAdapter userAdapter;
-    List<User> userList = new ArrayList<>();
+    // RecyclerViews
+    private RecyclerView recyclerUsers, recyclerEarnings, recyclerMechanicRequests,
+            recyclerCarWashBookings;
+    private UserAdapter userAdapter;
+    private EarningsAdapter earningsAdapter;
+    private ManageWashesAdapter carWashAdapter;
 
+    private List<LocalUser> userList = new ArrayList<>();
     private ApiHandler apiHandler;
 
     @Override
@@ -58,7 +72,7 @@ public class AdminActivity extends AppCompatActivity {
         setupNavigation();
 
         // Default screen
-        showScreen(HomeScreen);
+        showDashboardScreen();
 
         // Edit profile button
         btnEditProfile.setOnClickListener(v ->
@@ -69,17 +83,22 @@ public class AdminActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(v -> Utils.logout(this));
     }
 
+    // ----------------- Initialise Views -----------------
     private void initialiseViews() {
         drawerLayout = findViewById(R.id.drawerLayout);
         navigationView = findViewById(R.id.admin_navigationView);
         toolbar = findViewById(R.id.admin_toolbar);
         loggedUserName = findViewById(R.id.loggedUsername);
 
-        HomeScreen = findViewById(R.id.admin_dashboard);
-        ProfileScreen = findViewById(R.id.admin_profile);
-        SettingsScreen = findViewById(R.id.admin_settings);
-        UserManagementScreen = findViewById(R.id.admin_user_management);
+        screenDashboard = findViewById(R.id.admin_dashboard);
+        screenProfile = findViewById(R.id.admin_profile);
+        screenSettings = findViewById(R.id.admin_settings);
+        screenUserManagement = findViewById(R.id.admin_user_management);
+        screenEarnings = findViewById(R.id.earnings);
+        screenCarWashManagement = findViewById(R.id.manage_washes);
+        screenMechanicRequests = findViewById(R.id.bookings);
 
+        // Profile TextViews
         txtFullName = findViewById(R.id.txtFullName);
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
@@ -91,10 +110,20 @@ public class AdminActivity extends AppCompatActivity {
         btnEditProfile = findViewById(R.id.btnEditProfile);
         btnLogout = findViewById(R.id.btnLogout);
 
-        usersRecyclerView = findViewById(R.id.usersRecyclerView);
-        usersRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        // RecyclerViews
+        recyclerUsers = findViewById(R.id.usersRecyclerView);
+        recyclerUsers.setLayoutManager(new LinearLayoutManager(this));
 
-        // Setup ApiHandler
+        recyclerEarnings = findViewById(R.id.recyclerEarnings);
+        recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
+
+        recyclerMechanicRequests = findViewById(R.id.recyclerJobRequests);
+        recyclerMechanicRequests.setLayoutManager(new LinearLayoutManager(this));
+
+        recyclerCarWashBookings = findViewById(R.id.recyclerManageWashes);
+        recyclerCarWashBookings.setLayoutManager(new LinearLayoutManager(this));
+
+        // Setup API handler
         ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
         apiHandler = new ApiHandler(apiService);
     }
@@ -119,74 +148,125 @@ public class AdminActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                showScreen(HomeScreen);
+                showDashboardScreen();
             } else if (id == R.id.nav_profile) {
-                showScreen(ProfileScreen);
-                loadProfileData();
+                showProfileScreen();
             } else if (id == R.id.user_management) {
-                showScreen(UserManagementScreen);
-                loadUsers();
+                showUserManagementScreen();
+            } else if (id == R.id.nav_earnings) {
+                showEarningsScreen();
+            } else if (id == R.id.nav_carwah_managements) {
+                showCarWashManagementScreen();
+            } else if (id == R.id.na_mechanic_management) {
+                showMechanicRequestsScreen();
             } else if (id == R.id.nav_settings) {
-                showScreen(SettingsScreen);
+                showSettingsScreen();
             } else {
-                showScreen(HomeScreen);
+                showDashboardScreen();
             }
 
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
 
+        // Default selected item
         navigationView.setCheckedItem(R.id.nav_home);
     }
 
-    private void showScreen(ConstraintLayout screenToShow) {
-        HomeScreen.setVisibility(View.GONE);
-        ProfileScreen.setVisibility(View.GONE);
-        UserManagementScreen.setVisibility(View.GONE);
-        SettingsScreen.setVisibility(View.GONE);
-
-        screenToShow.setVisibility(View.VISIBLE);
+    // ----------------- Screen Display Methods -----------------
+    private void showDashboardScreen() {
+        hideAllScreens();
+        screenDashboard.setVisibility(View.VISIBLE);
+        loadUserProfile();
     }
 
-    // ----------------- Load Profile -----------------
-    private void loadProfileData() {
-        String token = Utils.getAuthToken(this);
-        apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
+    private void showProfileScreen() {
+        hideAllScreens();
+        screenProfile.setVisibility(View.VISIBLE);
+        loadUserProfile();
+    }
+
+    private void showUserManagementScreen() {
+        hideAllScreens();
+        screenUserManagement.setVisibility(View.VISIBLE);
+        loadUsers();
+    }
+
+    private void showEarningsScreen() {
+        hideAllScreens();
+        screenEarnings.setVisibility(View.VISIBLE);
+        loadEarnings();
+    }
+
+    private void showCarWashManagementScreen() {
+        hideAllScreens();
+        screenCarWashManagement.setVisibility(View.VISIBLE);
+        loadCarWashBookings();
+    }
+
+    private void showMechanicRequestsScreen() {
+        hideAllScreens();
+        screenMechanicRequests.setVisibility(View.VISIBLE);
+        loadMechanicRequests();
+    }
+
+    private void showSettingsScreen() {
+        hideAllScreens();
+        screenSettings.setVisibility(View.VISIBLE);
+    }
+
+    private void hideAllScreens() {
+        screenDashboard.setVisibility(View.GONE);
+        screenProfile.setVisibility(View.GONE);
+        screenUserManagement.setVisibility(View.GONE);
+        screenSettings.setVisibility(View.GONE);
+        screenEarnings.setVisibility(View.GONE);
+        screenCarWashManagement.setVisibility(View.GONE);
+        screenMechanicRequests.setVisibility(View.GONE);
+    }
+
+    // ----------------- Load Data Methods -----------------
+    private void loadUserProfile() {
+        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
             @Override
             public void onSuccess(UserProfile profile) {
-                String fullName = String.format("%s %s",
-                        profile.getLastName() != null ? profile.getLastName() : "",
-                        profile.getFirstName() != null ? profile.getFirstName() : "");
-                txtFullName.setText(fullName);
-                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
-                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
-                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
-                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "");
-                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
-                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
-                loggedUserName.setText(fullName);
+                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
+                txtUsername.setText(profile.getUsername());
+                txtEmail.setText(profile.getEmail());
+                txtPhone.setText(profile.getPhoneNumber());
+                txtCreatedAt.setText(profile.getCreatedAt());
+                txtUpdatedAt.setText(profile.getUpdatedAt());
+                txtRoles.setText(profile.getRole());
+                Utils.saveProfile(AdminActivity.this, profile);
             }
 
             @Override
             public void onFailure(String errorMessage) {
-                Toast.makeText(AdminActivity.this, "Failed to load profile: " + errorMessage, Toast.LENGTH_SHORT).show();
+                Toast.makeText(AdminActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // ----------------- Load Users -----------------
     private void loadUsers() {
-        String token = Utils.getAuthToken(this);
-
-        apiHandler.getAllUsers(token, new ApiHandler.ApiCallback<List<com.example.android_mech_app.Models.User>>() {
+        apiHandler.getAllProfiles(this, new ApiHandler.ApiCallback<List<UserProfile>>() {
             @Override
-            public void onSuccess(List<com.example.android_mech_app.Models.User> users) {
+            public void onSuccess(List<UserProfile> apiUsers) {
                 userList.clear();
-//                userList.addAll(users);  // Add API users to the list
+
+                // Map API Users to LocalUser
+                for (UserProfile apiUser : apiUsers) {
+                    userList.add(new LocalUser(
+                            apiUser.getFirstName() + " " + apiUser.getLastName(),
+                            apiUser.getUsername(),
+                            apiUser.getEmail(),
+                            apiUser.getPhoneNumber(),
+                            apiUser.getRoles() != null ? apiUser.getRoles().toString() : ""
+                    ));
+                }
 
                 if (userAdapter == null) {
                     userAdapter = new UserAdapter(userList);
-                    usersRecyclerView.setAdapter(userAdapter);
+                    recyclerUsers.setAdapter(userAdapter);
                 } else {
                     userAdapter.notifyDataSetChanged();
                 }
@@ -200,11 +280,55 @@ public class AdminActivity extends AppCompatActivity {
         });
     }
 
-    // ----------------- User model -----------------
-    static class User {
-        String fullName, username, email, phone, roles;
+    private void loadMechanicRequests() {
+        apiHandler.getAllMechanicRequests(this,  new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+            @Override
+            public void onSuccess(List<MechanicRequest> requests) {
+                JobRequestsAdapter adapter = new JobRequestsAdapter(requests, Role.MECHANIC);
+                recyclerMechanicRequests.setAdapter(adapter);
+            }
 
-        User(String fullName, String username, String email, String phone, String roles) {
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(AdminActivity.this, "Failed to load requests: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadCarWashBookings() {
+        apiHandler.getAllCarWashBookings(this, new ApiHandler.ApiCallback<List<CarWashBooking>>() {
+            @Override
+            public void onSuccess(List<CarWashBooking> bookings) {
+                carWashAdapter = new ManageWashesAdapter(bookings);
+                recyclerCarWashBookings.setAdapter(carWashAdapter);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(AdminActivity.this, "Failed to load bookings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void loadEarnings() {
+        apiHandler.getAllPayments(this, new ApiHandler.ApiCallback<List<Payment>>() {
+            @Override
+            public void onSuccess(List<Payment> payments) {
+                earningsAdapter = new EarningsAdapter(payments);
+                recyclerEarnings.setAdapter(earningsAdapter);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(AdminActivity.this, "Failed to load earnings: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // ----------------- Local User Model & Adapter -----------------
+    static class LocalUser {
+        String fullName, username, email, phone, roles;
+        LocalUser(String fullName, String username, String email, String phone, String roles) {
             this.fullName = fullName;
             this.username = username;
             this.email = email;
@@ -213,11 +337,9 @@ public class AdminActivity extends AppCompatActivity {
         }
     }
 
-    // ----------------- User Adapter -----------------
     class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder> {
-        List<User> users;
-
-        UserAdapter(List<User> users) { this.users = users; }
+        List<LocalUser> users;
+        UserAdapter(List<LocalUser> users) { this.users = users; }
 
         @NonNull
         @Override
@@ -229,7 +351,7 @@ public class AdminActivity extends AppCompatActivity {
         @SuppressLint("SetTextI18n")
         @Override
         public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
-            User user = users.get(position);
+            LocalUser user = users.get(position);
             holder.tvFullName.setText("Full Name: " + user.fullName);
             holder.tvUsername.setText("Username: " + user.username);
             holder.tvEmail.setText("Email: " + user.email);
@@ -248,7 +370,6 @@ public class AdminActivity extends AppCompatActivity {
         class UserViewHolder extends RecyclerView.ViewHolder {
             TextView tvFullName, tvUsername, tvEmail, tvPhone, tvRoles;
             Button btnAction;
-
             UserViewHolder(@NonNull View itemView) {
                 super(itemView);
                 tvFullName = itemView.findViewById(R.id.tvFullName);

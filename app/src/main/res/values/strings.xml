@@ -167,7 +167,7 @@
     <string name="enter_username">Enter Username</string>
     <string name="navigation_drawer_open">Open drawer</string>
     <string name="navigation_drawer_close">Close drawer</string>
-    <string name="profile">Profile</string>
+    <string name="profile">User Profile</string>
     <string name="home">Home</string>
     <string name="earnings">Earnings</string>
     <string name="settings">Settings</string>
@@ -178,15 +178,15 @@
     <string name="total_users">Total Users</string>
     <string name="clients">Clients</string>
     <string name="mechanics">Mechanics</string>
-    <string name="carwashes">Carwashes</string>
+    <string name="carwashes">CarWashes</string>
     <string name="jobs_completed">Jobs Completed</string>
     <string name="settings_screen">Settings Screen</string>
     <string name="earnings_screen">Earnings Screen</string>
     <string name="job_request">Job Request</string>
-    <string name="my_washes">My Washes</string>
-    <string name="service_request">Service Request</string>
-    <string name="book_car_wash">Book Car Wash</string>
-    <string name="service_history">Service History</string>
+    <string name="my_washes">My Car Wash History</string>
+    <string name="service_request">Mechanical Request</string>
+    <string name="book_car_wash">Car wash Request</string>
+    <string name="service_history">My Service History</string>
     <string name="for_someone_else">For Someone Else</string>
     <string name="for_myself">For Myself</string>
 

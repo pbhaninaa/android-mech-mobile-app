@@ -1,5 +1,7 @@
 package com.example.android_mech_app.Activities;
 
+import static com.example.android_mech_app.api.ApiConstants.PREFS_NAME;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -35,7 +37,7 @@ public class MechanicActivity extends AppCompatActivity {
 
     // Dashboard views
     private DrawerLayout drawerLayout;
-    private ConstraintLayout HomeScreen, ProfileScreen, JobRequestScreen, EarningsScreen, SettingsScreen;
+    private ConstraintLayout HomeScreen, ProfileScreen, JobRequestScreen, EarningsScreen, SettingsScreen,ManageJobsScreen;
     private NavigationView navigationView;
     private Toolbar toolbar;
     private TextView loggedUserName;
@@ -45,7 +47,7 @@ public class MechanicActivity extends AppCompatActivity {
     private Button btnEditProfile, btnLogout;
 
     // Earnings
-    private RecyclerView recyclerEarnings;
+    private RecyclerView recyclerEarnings,ManageRequestRecyclerView;
     private EarningsAdapter earningsAdapter;
 
     private ApiHandler apiHandler;
@@ -75,6 +77,7 @@ public class MechanicActivity extends AppCompatActivity {
         JobRequestScreen = findViewById(R.id.job_request);
         EarningsScreen = findViewById(R.id.earnings);
         SettingsScreen = findViewById(R.id.settings);
+        ManageJobsScreen = findViewById(R.id.manage_job_request);
 
         // Profile
         txtFullName = findViewById(R.id.txtFullName);
@@ -90,6 +93,9 @@ public class MechanicActivity extends AppCompatActivity {
         // Earnings
         recyclerEarnings = findViewById(R.id.recyclerEarnings);
         recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
+
+        ManageRequestRecyclerView = findViewById(R.id.recyclerManageJobRequests);
+        ManageRequestRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // Logout button
         btnLogout = findViewById(R.id.btnLogout);
@@ -124,10 +130,13 @@ public class MechanicActivity extends AppCompatActivity {
                 loadProfile();
             } else if (id == R.id.nav_job_request) {
                 showScreen(JobRequestScreen);
-                loadJobRequests();
+               loadJobRequests();
             } else if (id == R.id.nav_earnings) {
                 showScreen(EarningsScreen);
                 setupEarnings();
+            } else if (id == R.id.nav_manage_requests) {
+                showScreen(ManageJobsScreen);
+                loadJobRequestsById();
             } else if (id == R.id.nav_settings) {
                 showScreen(SettingsScreen);
             }
@@ -137,27 +146,29 @@ public class MechanicActivity extends AppCompatActivity {
         });
     }
 
+
+
     private void showScreen(ConstraintLayout screenToShow) {
         HomeScreen.setVisibility(ConstraintLayout.GONE);
         ProfileScreen.setVisibility(ConstraintLayout.GONE);
         JobRequestScreen.setVisibility(ConstraintLayout.GONE);
         EarningsScreen.setVisibility(ConstraintLayout.GONE);
         SettingsScreen.setVisibility(ConstraintLayout.GONE);
+        ManageJobsScreen.setVisibility(ConstraintLayout.GONE);
 
         screenToShow.setVisibility(ConstraintLayout.VISIBLE);
     }
 
     // ------------------- Job Requests -------------------
-    private void loadJobRequests() {
+    private void loadJobRequestsById() {
         String username = Utils.getLoggedInUsername(this);
 
-        apiHandler.getMechanicRequestsByUsername(username, new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+        apiHandler.getMechanicRequestsByUsername(this,username, new ApiHandler.ApiCallback<List<MechanicRequest>>() {
             @Override
             public void onSuccess(List<MechanicRequest> requests) {
-                RecyclerView jobRequestsRecycler = findViewById(R.id.recyclerJobRequests);
-                jobRequestsRecycler.setLayoutManager(new LinearLayoutManager(MechanicActivity.this));
+                ManageRequestRecyclerView.setLayoutManager(new LinearLayoutManager(MechanicActivity.this));
                 JobRequestsAdapter adapter = new JobRequestsAdapter(requests, Role.MECHANIC);
-                jobRequestsRecycler.setAdapter(adapter);
+                ManageRequestRecyclerView.setAdapter(adapter);
             }
 
             @Override
@@ -166,12 +177,25 @@ public class MechanicActivity extends AppCompatActivity {
             }
         });
     }
+    private void loadJobRequests() {
+        apiHandler.getAllMechanicRequests(this,  new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+            @Override
+            public void onSuccess(List<MechanicRequest> requests) {
+                JobRequestsAdapter adapter = new JobRequestsAdapter(requests, Role.MECHANIC);
+//                recyclerMechanicRequests.setAdapter(adapter);
+            }
 
+            @Override
+            public void onFailure(String errorMessage) {
+                Toast.makeText(MechanicActivity.this, "Failed to load requests: " + errorMessage, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
     // ------------------- Earnings -------------------
     private void setupEarnings() {
-        Long mechanicId = Utils.getLoggedInUserId(this);
+        String username = Utils.getLoggedInUsername(this);
 
-        apiHandler.getPaymentsByMechanic(mechanicId, new ApiHandler.ApiCallback<List<Payment>>() {
+        apiHandler.getPaymentsByClient(this,username, new ApiHandler.ApiCallback<List<Payment>>() {
             @Override
             public void onSuccess(List<Payment> payments) {
                 earningsAdapter = new EarningsAdapter(payments);
@@ -180,91 +204,49 @@ public class MechanicActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(String errorMessage) {
-                Toast.makeText(MechanicActivity.this, "Failed to load earnings: " + errorMessage, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MechanicActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
             }
         });
+
     }
 
     // ------------------- Profile -------------------
+
+
     private void loadProfile() {
-        if (loadProfileFromCache()) return; // Load from cache if exists
 
-        String token = Utils.getAuthToken(this);
-
-        apiHandler.getProfile(token, new ApiHandler.ApiCallback<UserProfile>() {
+        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
             @Override
             public void onSuccess(UserProfile profile) {
-                // Full name
-                String fullName = String.format("%s %s",
-                        profile.getLastName() != null ? profile.getLastName() : "",
-                        profile.getFirstName() != null ? profile.getFirstName() : "");
-                txtFullName.setText(fullName);
-
-                // Username, email, phone
-                txtUsername.setText(profile.getUsername() != null ? profile.getUsername() : "");
-                txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
-                txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
-
-                // Single role
-                txtRoles.setText(profile.getRole() != null ? profile.getRole() : "No role");
-
-                // Dates (createdAt and updatedAt)
-                txtCreatedAt.setText(profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
-                txtUpdatedAt.setText(profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
-
-                // Status (if you add a getStatus method in UserProfile)
-                // txtStatus.setText(profile.getStatus() != null ? profile.getStatus() : "");
+                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
+                txtUsername.setText(profile.getUsername());
+                txtEmail.setText(profile.getEmail());
+                txtPhone.setText(profile.getPhoneNumber());
+                txtCreatedAt.setText(profile.getCreatedAt());
+                txtUpdatedAt.setText(profile.getUpdatedAt());
+                txtRoles.setText(profile.getRole());
+                // Save profile to session
+                Utils.saveProfile(MechanicActivity.this, profile);
             }
 
             @Override
             public void onFailure(String errorMessage) {
-                Toast.makeText(MechanicActivity.this, "Failed to load profile: " + errorMessage, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MechanicActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+
+                // Fallback to cached profile
+                UserProfile cached = Utils.getProfile(MechanicActivity.this);
+                if (cached != null) {
+                    txtFullName.setText(cached.getFirstName() + " " + cached.getLastName());
+                    txtUsername.setText(cached.getUsername());
+                    txtEmail.setText(cached.getEmail());
+                    txtPhone.setText(cached.getPhoneNumber());
+                    txtCreatedAt.setText(cached.getCreatedAt());
+                    txtUpdatedAt.setText(cached.getUpdatedAt());
+                    Toast.makeText(MechanicActivity.this, "Loaded cached profile", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 
 
-    // ------------------- Local caching -------------------
-    private void saveProfileLocally(UserProfile profile) {
-        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-
-        editor.putString("PROFILE_FIRSTNAME", profile.getFirstName());
-        editor.putString("PROFILE_LASTNAME", profile.getLastName());
-        editor.putString("PROFILE_USERNAME", profile.getUsername());
-        editor.putString("PROFILE_EMAIL", profile.getEmail());
-        editor.putString("PROFILE_PHONE", profile.getPhoneNumber());
-
-        // Save single role
-        editor.putString("PROFILE_ROLE", profile.getRole() != null ? profile.getRole() : "No role");
-
-        // Convert LocalDateTime to string
-        editor.putString("PROFILE_CREATED_AT", profile.getCreatedAt() != null ? profile.getCreatedAt().toString() : "");
-        editor.putString("PROFILE_UPDATED_AT", profile.getUpdatedAt() != null ? profile.getUpdatedAt().toString() : "");
-
-        // Status if needed
-        // editor.putString("PROFILE_STATUS", profile.getStatus());
-
-        editor.apply();
-    }
-
-
-
-    private boolean loadProfileFromCache() {
-        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
-        String username = prefs.getString("PROFILE_USERNAME", null);
-
-        if (username != null) {
-            txtFullName.setText(prefs.getString("PROFILE_FULLNAME", ""));
-            txtUsername.setText(username);
-            txtEmail.setText(prefs.getString("PROFILE_EMAIL", ""));
-            txtPhone.setText(prefs.getString("PROFILE_PHONE", ""));
-            txtRoles.setText(prefs.getString("PROFILE_ROLES", ""));
-            txtStatus.setText(prefs.getString("PROFILE_STATUS", ""));
-            txtCreatedAt.setText(prefs.getString("PROFILE_CREATED_AT", ""));
-            txtUpdatedAt.setText(prefs.getString("PROFILE_UPDATED_AT", ""));
-            return true;
-        }
-        return false;
-    }
 }
