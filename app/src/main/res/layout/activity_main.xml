@@ -159,6 +159,7 @@
                 android:id="@+id/btn_create_user"
                 style="@style/PrimaryButton"
                 android:layout_width="match_parent"
+                android:onClick="handleCreateUser"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
                 android:text="@string/create_user_button" />
@@ -259,6 +260,7 @@
                 android:id="@+id/btn_create_profile"
                 style="@style/PrimaryButton"
                 android:layout_width="match_parent"
+                android:onClick="handleCreateProfile"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
                 android:text="@string/create_profile" />
