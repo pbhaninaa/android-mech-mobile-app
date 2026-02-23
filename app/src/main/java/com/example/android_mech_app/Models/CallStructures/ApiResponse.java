@@ -4,7 +4,6 @@ public class ApiResponse<T> {
     private String message;
     private int statusCode;
     private T data;
-    private boolean tokenExpired;
 
     public ApiResponse() {}
 
@@ -17,6 +16,4 @@ public class ApiResponse<T> {
     public T getData() { return data; }
     public void setData(T data) { this.data = data; }
 
-    public boolean isTokenExpired() { return tokenExpired; }
-    public void setTokenExpired(boolean tokenExpired) { this.tokenExpired = tokenExpired; }
 }
