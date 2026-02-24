@@ -6,9 +6,11 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,6 +34,8 @@ import com.example.android_mech_app.api.ApiHandler;
 import com.example.android_mech_app.api.ApiService;
 import com.google.gson.Gson;
 
+import java.util.Collections;
+
 public class MainActivity extends AppCompatActivity {
 
     // Layouts
@@ -48,15 +52,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvLoginLink;
 
     // Create Profile views
+    private EditText etProfileUsername, etProfileEmail;
     private EditText etProfileFirstName, etProfileLastName, etProfilePhone, etProfileAddress;
+    private Spinner spinnerRoles;
     private Button btnCreateProfile;
 
-    // API
     private ApiHandler apiHandler;
 
-    // Session
     private SharedPreferences prefs;
     private String accessToken;
+    private boolean CreateUser = true;
+
+    private static final String KEY_LOGGED_USERNAME = "LOGGED_USERNAME";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,20 +74,28 @@ public class MainActivity extends AppCompatActivity {
 
         prefs = getSharedPreferences(ApiConstants.PREFS_NAME, Context.MODE_PRIVATE);
         accessToken = prefs.getString(ApiConstants.KEY_TOKEN, null);
+        System.out.println(" In Main Activity");
 
-        // Already have a cached profile?
+        boolean isEditMode = getIntent().getBooleanExtra("editProfile", false);
         UserProfile savedProfile = getSavedUserProfile();
-        if (savedProfile != null && savedProfile.getRole() != null) {
-            navigateToRole(savedProfile.getRole());
-            return;
+        if(isEditMode){
+            CreateUser =false;
+
+            switchToCreateUserProfile();
+        }else{
+            if (savedProfile != null && savedProfile.getRole() != null) {
+                navigateToRole(savedProfile.getRole());
+                return;
+            }
+
+            if (accessToken != null) {
+                fetchUserProfile();
+            } else {
+                switchToLogin();
+            }
         }
 
-        // Token exists but no cached profile
-        if (accessToken != null) {
-            fetchUserProfile();
-        } else {
-            switchToLogin();
-        }
+
     }
 
     private void initialiseViews() {
@@ -92,30 +107,45 @@ public class MainActivity extends AppCompatActivity {
         layoutCreateUser = findViewById(R.id.layout_create_user);
         layoutCreateUserProfile = findViewById(R.id.layout_create_user_profile);
 
-        // Login
+        // ---------------- LOGIN ----------------
         etLoginEmail = findViewById(R.id.et_login_email);
         etLoginPassword = findViewById(R.id.et_login_password);
         btnLogin = findViewById(R.id.btn_login);
         tvCreateUserLink = findViewById(R.id.tv_create_user_link);
+
         btnLogin.setOnClickListener(v -> handleLogin());
         tvCreateUserLink.setOnClickListener(v -> switchToCreateUser());
 
-        // Create User
+        // ---------------- CREATE USER ----------------
         etCreateUserEmail = findViewById(R.id.et_create_user_email);
         etCreateUserPassword = findViewById(R.id.et_create_user_password);
         etConfirmPassword = findViewById(R.id.et_pass_confirm);
         btnCreateUser = findViewById(R.id.btn_create_user);
         tvLoginLink = findViewById(R.id.tv_login_link);
+
         btnCreateUser.setOnClickListener(this::handleCreateUser);
         tvLoginLink.setOnClickListener(v -> switchToLogin());
 
-        // Create Profile
+        // ---------------- CREATE PROFILE ----------------
+        etProfileUsername = findViewById(R.id.et_profile_username);
+        etProfileEmail = findViewById(R.id.et_profile_email);
         etProfileFirstName = findViewById(R.id.et_profile_first_name);
         etProfileLastName = findViewById(R.id.et_profile_last_name);
         etProfilePhone = findViewById(R.id.et_profile_phone);
         etProfileAddress = findViewById(R.id.et_profile_address);
+        spinnerRoles = findViewById(R.id.spinner_roles);
         btnCreateProfile = findViewById(R.id.btn_create_profile);
+
         btnCreateProfile.setOnClickListener(this::handleCreateProfile);
+
+        ArrayAdapter<String> roleAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                new String[]{"CLIENT", "MECHANIC", "CARWASH","ADMIN"}
+        );
+
+        roleAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerRoles.setAdapter(roleAdapter);
 
         ConstraintLayout mainLayout = findViewById(R.id.main_layout);
         ViewCompat.setOnApplyWindowInsetsListener(mainLayout, (v, insets) -> {
@@ -125,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ------------------- Layout Switch -------------------
+    // ---------------- Layout Switching ----------------
     private void switchToLogin() {
         layoutLogin.setVisibility(View.VISIBLE);
         layoutCreateUser.setVisibility(View.GONE);
@@ -142,10 +172,44 @@ public class MainActivity extends AppCompatActivity {
         layoutLogin.setVisibility(View.GONE);
         layoutCreateUser.setVisibility(View.GONE);
         layoutCreateUserProfile.setVisibility(View.VISIBLE);
+        System.out.println(" We have Profile in Session  ");
+        boolean isEditMode = getIntent().getBooleanExtra("editProfile", false);
+        UserProfile savedProfile = getSavedUserProfile();
+
+        if (savedProfile != null) {
+            // Populate fields
+            etProfileUsername.setText(savedProfile.getUsername());
+            etProfileEmail.setText(savedProfile.getEmail());
+            etProfileFirstName.setText(savedProfile.getFirstName());
+            etProfileLastName.setText(savedProfile.getLastName());
+            etProfilePhone.setText(savedProfile.getPhoneNumber().replace("+27", ""));
+            etProfileAddress.setText(savedProfile.getAddress());
+
+            if (isEditMode) {
+                // Disable username always
+                etProfileUsername.setKeyListener(null);
+
+                // Disable role spinner only if user is NOT admin
+                if (!"ADMIN".equalsIgnoreCase(savedProfile.getRole())) {
+                    spinnerRoles.setEnabled(false);
+                }
+
+                // Optionally, disable email editing
+                etProfileEmail.setKeyListener(null);
+            } else {
+                // Normal flow: only disable username if saved in prefs
+                String loggedUsername = prefs.getString(KEY_LOGGED_USERNAME, null);
+                if (loggedUsername != null) {
+                    etProfileUsername.setText(loggedUsername);
+                    etProfileUsername.setKeyListener(null); // Disable editing
+                }
+            }
+        }
     }
 
-    // ------------------- LOGIN -------------------
+    // ---------------- LOGIN ----------------
     private void handleLogin() {
+
         String username = etLoginEmail.getText().toString().trim();
         String password = etLoginPassword.getText().toString().trim();
 
@@ -161,8 +225,13 @@ public class MainActivity extends AppCompatActivity {
         apiHandler.login(this, request, new ApiHandler.ApiCallback<LoginResponse>() {
             @Override
             public void onSuccess(LoginResponse result) {
+
                 accessToken = result.getAccessToken();
-                prefs.edit().putString(ApiConstants.KEY_TOKEN, accessToken).apply();
+
+                prefs.edit()
+                        .putString(ApiConstants.KEY_TOKEN, accessToken)
+                        .putString(KEY_LOGGED_USERNAME, request.getUsername())
+                        .apply();
 
                 if (result.isHasProfile()) {
                     fetchUserProfile();
@@ -200,8 +269,9 @@ public class MainActivity extends AppCompatActivity {
         return new Gson().fromJson(json, UserProfile.class);
     }
 
-    // ------------------- CREATE USER -------------------
+    // ---------------- CREATE USER ----------------
     private void handleCreateUser(View v) {
+
         String email = etCreateUserEmail.getText().toString().trim();
         String password = etCreateUserPassword.getText().toString().trim();
         String confirm = etConfirmPassword.getText().toString().trim();
@@ -224,11 +294,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(User result) {
                 Toast.makeText(MainActivity.this, "User created successfully", Toast.LENGTH_SHORT).show();
-//                switchToCreateUserProfile();
                 etLoginEmail.setText(request.getUsername());
                 etLoginPassword.setText(request.getPassword());
                 switchToLogin();
-
             }
 
             @Override
@@ -238,42 +306,73 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // ------------------- CREATE PROFILE -------------------
+    // ---------------- CREATE PROFILE ----------------
     private void handleCreateProfile(View v) {
+
+        String username = etProfileUsername.getText().toString().trim();
+        String email = etProfileEmail.getText().toString().trim();
         String firstName = etProfileFirstName.getText().toString().trim();
         String lastName = etProfileLastName.getText().toString().trim();
-        String phone = etProfilePhone.getText().toString().trim();
+        String phone ="+27"+ etProfilePhone.getText().toString().trim();
         String address = etProfileAddress.getText().toString().trim();
+        String selectedRole = spinnerRoles.getSelectedItem().toString();
 
-        if (TextUtils.isEmpty(firstName) || TextUtils.isEmpty(lastName) || TextUtils.isEmpty(phone) || TextUtils.isEmpty(address)) {
+        if (TextUtils.isEmpty(username) ||
+                TextUtils.isEmpty(email) ||
+                TextUtils.isEmpty(firstName) ||
+                TextUtils.isEmpty(lastName) ||
+                TextUtils.isEmpty(phone) ||
+                TextUtils.isEmpty(address)) {
+
             Toast.makeText(this, "Fill all profile fields", Toast.LENGTH_SHORT).show();
             return;
         }
 
         UserProfile request = new UserProfile();
+        request.setUsername(username);
+        request.setEmail(email);
         request.setFirstName(firstName);
         request.setLastName(lastName);
         request.setPhoneNumber(phone);
         request.setAddress(address);
+        request.setRoles(Collections.singletonList(selectedRole));
+if(!CreateUser){
+    apiHandler.updateProfile(this, request, new ApiHandler.ApiCallback<UserProfile>() {
+        @Override
+        public void onSuccess(UserProfile profile) {
+            System.out.println(profile.toString());
+            Utils.saveProfile(MainActivity.this, profile);
+            Toast.makeText(MainActivity.this, "Profile created successfully", Toast.LENGTH_SHORT).show();
+            navigateToRole(profile.getRole());
+        }
 
-        apiHandler.createProfile(this, request, new ApiHandler.ApiCallback<UserProfile>() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                Utils.saveProfile(MainActivity.this, profile);
-                Toast.makeText(MainActivity.this, "Profile created successfully", Toast.LENGTH_SHORT).show();
-                navigateToRole(profile.getRole());
-            }
-
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
+        @Override
+        public void onFailure(String errorMessage) {
+            Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+        }
+    });
+}else{apiHandler.createProfile(this, request, new ApiHandler.ApiCallback<UserProfile>() {
+    @Override
+    public void onSuccess(UserProfile profile) {
+        System.out.println(profile.toString());
+        Utils.saveProfile(MainActivity.this, profile);
+        Toast.makeText(MainActivity.this, "Profile created successfully", Toast.LENGTH_SHORT).show();
+        navigateToRole(profile.getRole());
     }
 
-    // ------------------- NAVIGATION -------------------
+    @Override
+    public void onFailure(String errorMessage) {
+        Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+    }
+});}
+
+    }
+
+    // ---------------- NAVIGATION ----------------
     private void navigateToRole(String role) {
+
         Intent intent;
+
         switch (role.toUpperCase()) {
             case "CLIENT": intent = new Intent(this, ClientActivity.class); break;
             case "MECHANIC": intent = new Intent(this, MechanicActivity.class); break;
@@ -281,6 +380,7 @@ public class MainActivity extends AppCompatActivity {
             case "ADMIN": intent = new Intent(this, AdminActivity.class); break;
             default: intent = new Intent(this, ClientActivity.class); break;
         }
+
         startActivity(intent);
         finish();
     }

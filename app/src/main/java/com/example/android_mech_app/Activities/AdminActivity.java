@@ -1,6 +1,7 @@
 package com.example.android_mech_app.Activities;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.JobRequestsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
+import com.example.android_mech_app.MainActivity;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.MechanicRequest;
 import com.example.android_mech_app.Models.Payment;
@@ -37,7 +39,7 @@ import com.google.android.material.navigation.NavigationView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdminActivity extends AppCompatActivity {
+public class AdminActivity extends BaseActivity {
 
     // Layout & Navigation
     private DrawerLayout drawerLayout;
@@ -60,7 +62,7 @@ public class AdminActivity extends AppCompatActivity {
     private ManageWashesAdapter carWashAdapter;
 
     private List<LocalUser> userList = new ArrayList<>();
-    private ApiHandler apiHandler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,9 +72,9 @@ public class AdminActivity extends AppCompatActivity {
         initialiseViews();
         setupToolbarDrawer();
         setupNavigation();
-
         // Default screen
-        showDashboardScreen();
+        hideAllScreens(screenDashboard);
+        loadUserProfile();
 
         // Edit profile button
         btnEditProfile.setOnClickListener(v ->
@@ -80,7 +82,7 @@ public class AdminActivity extends AppCompatActivity {
         );
 
         // Logout
-        btnLogout.setOnClickListener(v -> Utils.logout(this));
+        setupLogout(btnLogout);
     }
 
     // ----------------- Initialise Views -----------------
@@ -123,23 +125,12 @@ public class AdminActivity extends AppCompatActivity {
         recyclerCarWashBookings = findViewById(R.id.recyclerManageWashes);
         recyclerCarWashBookings.setLayoutManager(new LinearLayoutManager(this));
 
-        // Setup API handler
-        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
-        apiHandler = new ApiHandler(apiService);
+        initApi();
     }
 
     // ----------------- Toolbar & Drawer -----------------
     private void setupToolbarDrawer() {
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Admin Dashboard");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close
-        );
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        setupToolbarDrawer(toolbar, drawerLayout, "Admin Dashboard");
     }
 
     // ----------------- Navigation -----------------
@@ -148,21 +139,28 @@ public class AdminActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                showDashboardScreen();
+                hideAllScreens(screenDashboard);
+                loadUserProfile();
             } else if (id == R.id.nav_profile) {
-                showProfileScreen();
+                hideAllScreens(screenProfile);
+                loadUserProfile();
             } else if (id == R.id.user_management) {
-                showUserManagementScreen();
+                hideAllScreens(screenUserManagement);
+                loadUsers();
             } else if (id == R.id.nav_earnings) {
-                showEarningsScreen();
+                hideAllScreens(screenEarnings);
+                loadEarnings();
             } else if (id == R.id.nav_carwah_managements) {
-                showCarWashManagementScreen();
+                hideAllScreens(screenCarWashManagement);
+                loadCarWashBookings();
             } else if (id == R.id.na_mechanic_management) {
-                showMechanicRequestsScreen();
+                hideAllScreens(screenMechanicRequests);
+                loadMechanicRequests();
             } else if (id == R.id.nav_settings) {
-                showSettingsScreen();
+                hideAllScreens(screenSettings);
             } else {
-                showDashboardScreen();
+                hideAllScreens(screenDashboard);
+                loadUserProfile();
             }
 
             drawerLayout.closeDrawer(GravityCompat.START);
@@ -173,78 +171,27 @@ public class AdminActivity extends AppCompatActivity {
         navigationView.setCheckedItem(R.id.nav_home);
     }
 
-    // ----------------- Screen Display Methods -----------------
-    private void showDashboardScreen() {
-        hideAllScreens();
-        screenDashboard.setVisibility(View.VISIBLE);
-        loadUserProfile();
-    }
 
-    private void showProfileScreen() {
-        hideAllScreens();
-        screenProfile.setVisibility(View.VISIBLE);
-        loadUserProfile();
-    }
 
-    private void showUserManagementScreen() {
-        hideAllScreens();
-        screenUserManagement.setVisibility(View.VISIBLE);
-        loadUsers();
-    }
 
-    private void showEarningsScreen() {
-        hideAllScreens();
-        screenEarnings.setVisibility(View.VISIBLE);
-        loadEarnings();
-    }
+    private void hideAllScreens(ConstraintLayout screenToShow) {
 
-    private void showCarWashManagementScreen() {
-        hideAllScreens();
-        screenCarWashManagement.setVisibility(View.VISIBLE);
-        loadCarWashBookings();
-    }
-
-    private void showMechanicRequestsScreen() {
-        hideAllScreens();
-        screenMechanicRequests.setVisibility(View.VISIBLE);
-        loadMechanicRequests();
-    }
-
-    private void showSettingsScreen() {
-        hideAllScreens();
-        screenSettings.setVisibility(View.VISIBLE);
-    }
-
-    private void hideAllScreens() {
-        screenDashboard.setVisibility(View.GONE);
-        screenProfile.setVisibility(View.GONE);
-        screenUserManagement.setVisibility(View.GONE);
-        screenSettings.setVisibility(View.GONE);
-        screenEarnings.setVisibility(View.GONE);
-        screenCarWashManagement.setVisibility(View.GONE);
-        screenMechanicRequests.setVisibility(View.GONE);
+        showOnly(
+                screenDashboard,
+                screenProfile,
+                screenUserManagement,
+                screenSettings,
+                screenEarnings,
+                screenCarWashManagement,
+                screenMechanicRequests
+        );
+        screenToShow.setVisibility(View.VISIBLE);
     }
 
     // ----------------- Load Data Methods -----------------
     private void loadUserProfile() {
-        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
-                txtUsername.setText(profile.getUsername());
-                txtEmail.setText(profile.getEmail());
-                txtPhone.setText(profile.getPhoneNumber());
-                txtCreatedAt.setText(profile.getCreatedAt());
-                txtUpdatedAt.setText(profile.getUpdatedAt());
-                txtRoles.setText(profile.getRole());
-                Utils.saveProfile(AdminActivity.this, profile);
-            }
+        loadProfile(txtFullName,txtUsername,txtEmail,txtPhone,txtRoles,txtCreatedAt,txtUpdatedAt);
 
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(AdminActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     private void loadUsers() {
@@ -281,18 +228,18 @@ public class AdminActivity extends AppCompatActivity {
     }
 
     private void loadMechanicRequests() {
-        apiHandler.getAllMechanicRequests(this,  new ApiHandler.ApiCallback<List<MechanicRequest>>() {
-            @Override
-            public void onSuccess(List<MechanicRequest> requests) {
-                JobRequestsAdapter adapter = new JobRequestsAdapter(requests, Role.MECHANIC);
-                recyclerMechanicRequests.setAdapter(adapter);
-            }
+apiHandler.getAllMerchantRequest(this, new ApiHandler.ApiCallback<List<MechanicRequest>>() {
+    @Override
+    public void onSuccess(List<MechanicRequest> result) {
 
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(AdminActivity.this, "Failed to load requests: " + errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
+    }
+
+    @Override
+    public void onFailure(String errorMessage) {
+
+    }
+});
+
     }
 
     private void loadCarWashBookings() {
@@ -381,4 +328,5 @@ public class AdminActivity extends AppCompatActivity {
             }
         }
     }
+
 }

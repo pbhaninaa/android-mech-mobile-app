@@ -18,10 +18,6 @@ import com.example.android_mech_app.api.ApiClient;
 import com.google.gson.Gson;
 
 public class Utils {
-
-
-
-
     /*
      * -------------------------------
      * TOKEN METHODS
@@ -63,6 +59,7 @@ public class Utils {
                 .putLong(KEY_USER_ID, profile.getId())
                 .apply();
     }
+
 
     public static UserProfile getProfile(Context context) {
 

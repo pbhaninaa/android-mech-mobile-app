@@ -2,6 +2,7 @@ package com.example.android_mech_app.Activities;
 
 import android.Manifest;
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.location.Location;
@@ -35,6 +36,7 @@ import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.FaqAdapter;
 import com.example.android_mech_app.Adapters.JobRequestsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
+import com.example.android_mech_app.MainActivity;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.MechanicRequest;
 import com.example.android_mech_app.Models.Payment;
@@ -52,7 +54,7 @@ import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.List;
 
-public class ClientActivity extends AppCompatActivity {
+public class ClientActivity extends BaseActivity {
 
     // ---------------- Views ----------------
     private DrawerLayout drawerLayout;
@@ -78,7 +80,7 @@ public class ClientActivity extends AppCompatActivity {
     private LinearLayout llContactDetails;
     private Button btnEmail, btnWhatsApp;
 
-    private ApiHandler apiHandler;
+
 
     private String[] jobOptions = {
             "Fix car engine", "Replace brake pads", "Change oil",
@@ -91,7 +93,6 @@ public class ClientActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
-
         initialiseViews();
         setupToolbarDrawer();
         setupNavigation();
@@ -146,26 +147,14 @@ public class ClientActivity extends AppCompatActivity {
         btnEmail = findViewById(R.id.btnEmail);
         btnWhatsApp = findViewById(R.id.btnWhatsApp);
 
-        btnLogout.setOnClickListener(v -> Utils.logout(this));
+        setupLogout(btnLogout);
 
-        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
-        apiHandler = new ApiHandler(apiService);
+        initApi();
     }
 
     // ---------------- Toolbar ----------------
     private void setupToolbarDrawer() {
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Client Dashboard");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this,
-                drawerLayout,
-                toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close);
-
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        setupToolbarDrawer(toolbar, drawerLayout, "Admin Dashboard");
     }
 
     // ---------------- Navigation ----------------
@@ -195,15 +184,18 @@ public class ClientActivity extends AppCompatActivity {
     // ---------------- Screen Switch ----------------
     private void showScreen(ConstraintLayout screen) {
 
-        HomeScreen.setVisibility(View.GONE);
-        ProfileScreen.setVisibility(View.GONE);
-        CarWashBookingsScreen.setVisibility(View.GONE);
-        CarWashHistoryScreen.setVisibility(View.GONE);
-        ServiceHistoryScreen.setVisibility(View.GONE);
-        PaymentsScreen.setVisibility(View.GONE);
-        SettingsScreen.setVisibility(View.GONE);
-        ServiceRequestScreen.setVisibility(View.GONE);
-        HelpScreen.setVisibility(View.GONE);
+
+        showOnly(
+                PaymentsScreen,
+                ServiceRequestScreen,
+                HomeScreen,
+                HelpScreen,
+                ProfileScreen,
+                SettingsScreen,
+                CarWashBookingsScreen,
+                CarWashHistoryScreen,
+                ServiceHistoryScreen
+        );
 
         screen.setVisibility(View.VISIBLE);
     }
@@ -215,8 +207,7 @@ public class ClientActivity extends AppCompatActivity {
     }
 
     private void openProfile() {
-        showScreen(ProfileScreen);
-        loadUserProfile();
+
     }
 
     private void openServiceRequest() {
@@ -291,40 +282,8 @@ public class ClientActivity extends AppCompatActivity {
 
     // ---------------- Profile ----------------
     private void loadUserProfile() {
-        String token = Utils.getAuthToken(this);
+        loadProfile(txtFullName,txtUsername,txtEmail,txtPhone,txtRoles,txtCreatedAt,txtUpdatedAt);
 
-        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
-                txtUsername.setText(profile.getUsername());
-                txtEmail.setText(profile.getEmail());
-                txtPhone.setText(profile.getPhoneNumber());
-                txtCreatedAt.setText(profile.getCreatedAt());
-                txtUpdatedAt.setText(profile.getUpdatedAt());
-                txtRoles.setText(profile.getRole());
-
-                // Save profile to session
-                Utils.saveProfile(ClientActivity.this, profile);
-            }
-
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(ClientActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-
-                // Fallback to cached profile
-                UserProfile cached = Utils.getProfile(ClientActivity.this);
-                if (cached != null) {
-                    txtFullName.setText(cached.getFirstName() + " " + cached.getLastName());
-                    txtUsername.setText(cached.getUsername());
-                    txtEmail.setText(cached.getEmail());
-                    txtPhone.setText(cached.getPhoneNumber());
-                    txtCreatedAt.setText(cached.getCreatedAt());
-                    txtUpdatedAt.setText(cached.getUpdatedAt());
-                    Toast.makeText(ClientActivity.this, "Loaded cached profile", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
     }
     // ---------------- Payments ----------------
     private void setupPayments() {
@@ -573,4 +532,6 @@ private void getCurrentLocationWithName() {
                     }
                 });
     }
+
+
 }

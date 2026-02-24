@@ -199,14 +199,43 @@
                 style="@style/TitleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:text="@string/create_profile"
                 android:textColor="@color/white" />
 
+            <!-- USERNAME -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_medium"
+                android:hint="username">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_profile_username"
+                    style="@style/InputField"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- EMAIL -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:hint="email">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_profile_email"
+                    style="@style/InputField"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- FIRST NAME -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/spacing_small"
                 android:hint="@string/first_name">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -216,6 +245,7 @@
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- LAST NAME -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -229,9 +259,11 @@
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- PHONE -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:prefixText="+27"
                 android:layout_marginTop="@dimen/spacing_small"
                 android:hint="@string/phone_number">
 
@@ -240,9 +272,11 @@
                     style="@style/InputField"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:maxLength="9"
                     android:inputType="phone" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- ADDRESS -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -256,14 +290,33 @@
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- ROLE SPINNER -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/background_light"
+                app:boxCornerRadiusBottomEnd="@dimen/dp_5"
+                app:boxCornerRadiusTopStart="@dimen/dp_50"
+                android:paddingVertical="@dimen/dp_15"
+                android:layout_marginTop="@dimen/spacing_small"
+                android:hint="Role">
+
+                <Spinner
+                    android:id="@+id/spinner_roles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- CREATE BUTTON -->
             <Button
                 android:id="@+id/btn_create_profile"
                 style="@style/PrimaryButton"
                 android:layout_width="match_parent"
-                android:onClick="handleCreateProfile"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/spacing_large"
+                android:onClick="handleCreateProfile"
                 android:text="@string/create_profile" />
+
         </LinearLayout>
     </ScrollView>
 

@@ -5,6 +5,9 @@ import java.util.List;
 
 public class UserProfile {
 
+    @SerializedName("id")   // must match backend field
+    private Long id;
+
     @SerializedName("username")
     private String username;
 
@@ -27,10 +30,10 @@ public class UserProfile {
     private List<String> roles;
 
     @SerializedName("createdAt")
-    private String createdAt;  // keep as String to avoid Gson parse error
+    private String createdAt;
 
     @SerializedName("updatedAt")
-    private String updatedAt;  // keep as String
+    private String updatedAt;
 
     @SerializedName("enabled")
     private boolean enabled;
@@ -44,10 +47,11 @@ public class UserProfile {
     @SerializedName("credentialsNonExpired")
     private boolean credentialsNonExpired;
 
-    @SerializedName("id")
-    private int id;
+    // ---------------- GETTERS & SETTERS ----------------
 
-    // --- Getters and Setters ---
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
@@ -87,10 +91,8 @@ public class UserProfile {
     public boolean isCredentialsNonExpired() { return credentialsNonExpired; }
     public void setCredentialsNonExpired(boolean credentialsNonExpired) { this.credentialsNonExpired = credentialsNonExpired; }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    // ---------------- HELPER ----------------
 
-    // --- Helper method to get first role ---
     public String getRole() {
         if (roles != null && !roles.isEmpty()) {
             return roles.get(0);
@@ -98,24 +100,19 @@ public class UserProfile {
         return null;
     }
 
-    // --- toString() for debugging ---
+    // ---------------- DEBUG ----------------
+
     @Override
     public String toString() {
         return "UserProfile{" +
-                "username='" + username + '\'' +
+                "id=" + id +
+                ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", address='" + address + '\'' +
                 ", roles=" + roles +
-                ", createdAt='" + createdAt + '\'' +
-                ", updatedAt='" + updatedAt + '\'' +
-                ", enabled=" + enabled +
-                ", accountNonExpired=" + accountNonExpired +
-                ", accountNonLocked=" + accountNonLocked +
-                ", credentialsNonExpired=" + credentialsNonExpired +
-                ", id=" + id +
                 '}';
     }
 }

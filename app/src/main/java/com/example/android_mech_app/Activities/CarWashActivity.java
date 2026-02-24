@@ -1,5 +1,6 @@
 package com.example.android_mech_app.Activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.android_mech_app.Adapters.EarningsAdapter;
 import com.example.android_mech_app.Adapters.ManageWashesAdapter;
+import com.example.android_mech_app.MainActivity;
 import com.example.android_mech_app.Models.CarWashBooking;
 import com.example.android_mech_app.Models.Earning;
 import com.example.android_mech_app.Models.Payment;
@@ -32,7 +34,7 @@ import com.google.android.material.navigation.NavigationView;
 
 import java.util.List;
 
-public class CarWashActivity extends AppCompatActivity {
+public class CarWashActivity extends BaseActivity {
 
     // Dashboard views
     private DrawerLayout drawerLayout;
@@ -43,19 +45,18 @@ public class CarWashActivity extends AppCompatActivity {
 
     // Profile views
     private TextView txtFullName, txtUsername, txtEmail, txtPhone, txtRoles, txtStatus, txtCreatedAt, txtUpdatedAt;
-    private Button btnEditProfile, Logout;
+    private Button btnEditProfile, btnLogout;
 
     // Earnings
     private RecyclerView recyclerEarnings;
     private EarningsAdapter earningsAdapter;
 
-    private ApiHandler apiHandler;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_car_wash);
-
         initialiseViews();
         setupToolbarAndDrawer();
         setupNavigation();
@@ -89,24 +90,14 @@ public class CarWashActivity extends AppCompatActivity {
         recyclerEarnings = findViewById(R.id.recyclerEarnings);
         recyclerEarnings.setLayoutManager(new LinearLayoutManager(this));
 
-        Logout = findViewById(R.id.btnLogout);
-        Logout.setOnClickListener(v -> Utils.logout(this));
+        btnLogout = findViewById(R.id.btnLogout);
+        setupLogout(btnLogout);
 
-        ApiService apiService = ApiClient.getClient(this).create(ApiService.class);
-        apiHandler = new ApiHandler(apiService);
+        initApi();
     }
 
     private void setupToolbarAndDrawer() {
-        setSupportActionBar(toolbar);
-        toolbar.setTitle("Nice and Clean Car Wash");
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawerLayout, toolbar,
-                R.string.navigation_drawer_open,
-                R.string.navigation_drawer_close
-        );
-        drawerLayout.addDrawerListener(toggle);
-        toggle.syncState();
+        setupToolbarDrawer(toolbar, drawerLayout, "Admin Dashboard");
     }
 
     private void setupNavigation() {
@@ -139,12 +130,13 @@ public class CarWashActivity extends AppCompatActivity {
     }
 
     private void showScreen(ConstraintLayout screenToShow) {
-        HomeScreen.setVisibility(View.GONE);
-        ProfileScreen.setVisibility(View.GONE);
-        BookingsScreen.setVisibility(View.GONE);
-        ManageWashesScreen.setVisibility(View.GONE);
-        EarningsScreen.setVisibility(View.GONE);
-        SettingsScreen.setVisibility(View.GONE);
+
+        showOnly(
+                HomeScreen,
+                ProfileScreen,
+                EarningsScreen,
+                SettingsScreen,BookingsScreen,ManageWashesScreen
+        );
 
         screenToShow.setVisibility(View.VISIBLE);
     }
@@ -186,38 +178,8 @@ public class CarWashActivity extends AppCompatActivity {
     }
 
     private void loadUserProfile() {
+        loadProfile(txtFullName,txtUsername,txtEmail,txtPhone,txtRoles,txtCreatedAt,txtUpdatedAt);
 
-        apiHandler.getProfile(this, new ApiHandler.ApiCallback<UserProfile>() {
-            @Override
-            public void onSuccess(UserProfile profile) {
-                txtFullName.setText(profile.getFirstName() + " " + profile.getLastName());
-                txtUsername.setText(profile.getUsername());
-                txtEmail.setText(profile.getEmail());
-                txtPhone.setText(profile.getPhoneNumber());
-                txtCreatedAt.setText(profile.getCreatedAt());
-                txtUpdatedAt.setText(profile.getUpdatedAt());
-                txtRoles.setText(profile.getRole());
-                // Save profile to session
-                Utils.saveProfile(CarWashActivity.this, profile);
-            }
-
-            @Override
-            public void onFailure(String errorMessage) {
-                Toast.makeText(CarWashActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-
-                // Fallback to cached profile
-                UserProfile cached = Utils.getProfile(CarWashActivity.this);
-                if (cached != null) {
-                    txtFullName.setText(cached.getFirstName() + " " + cached.getLastName());
-                    txtUsername.setText(cached.getUsername());
-                    txtEmail.setText(cached.getEmail());
-                    txtPhone.setText(cached.getPhoneNumber());
-                    txtCreatedAt.setText(cached.getCreatedAt());
-                    txtUpdatedAt.setText(cached.getUpdatedAt());
-                    Toast.makeText(CarWashActivity.this, "Loaded cached profile", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
     }
     private void setupEarnings() {
         Long userId = Utils.getLoggedInUserId(this);
